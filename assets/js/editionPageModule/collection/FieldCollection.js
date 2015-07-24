@@ -166,6 +166,11 @@ define([
         },
 
 
+        initHookChannel : function() {
+            this.hookChannel = Backbone.Radio.channel('hook');
+        },
+
+
         /**
          * Duplicate model in the collection
          *
@@ -298,6 +303,9 @@ define([
 
                 this.add(field);
 
+                //  Send event when field is added to the form
+                this.hookChannel.trigger('field:add', this, field);
+
                 if (ifFieldIsInFieldset) {
 
                     var fieldset = this.get(field.get('subFormParent'));
@@ -363,6 +371,8 @@ define([
                     var fieldSet = this.get(item.get('subFormParent'));
                     fieldSet.removeField(item.get('name'));
                 }
+
+                this.hookChannel.trigger('field:remove', this, item);
 
                 //  We used trigger instead destroy method, the DELETE ajax request is not send
                 item.trigger('destroy', item);

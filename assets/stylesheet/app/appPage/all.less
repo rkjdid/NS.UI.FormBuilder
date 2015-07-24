@@ -1,0 +1,194 @@
+#homeSection {
+    height: 100%;
+
+    background-image: url('../assets/images/desert.jpg');
+    background-size: 130%;
+
+    & > div {
+        height: 100%;
+
+        & > .row {
+            height: 100%;
+        }
+    }
+
+    #mainPanel {
+        height: 100%;
+
+        & > div {
+            height: 100%;
+
+            height: 100%;
+
+            .search {
+                width: 65%;
+                margin: 50px auto 100px auto;
+                label {
+                    font-size: 40px;
+                    .exo;
+                }
+                input {
+                    .exo;
+                    overflow: hidden;
+                    background: transparent;
+                    box-shadow: none;
+                    border: 1px #222 solid;
+                    outline: none;
+                    .neverHasShadow(#222);
+                    border-radius: 15px !important;
+                    padding: 4px 4px 8px 7px;
+                    height: 40px;
+                    width: 100%;
+                    font-size: 25px;
+                }
+                span.reneco-settings {
+                    position: relative;
+                    left: ~'calc(100% - 35px)';
+                    font-size: 30px;
+                    top: -36px;
+                }
+            }
+
+            .context {
+
+                width: 50%;
+                position: fixed;
+                bottom : 100px;
+                left: 0;
+
+                .context-container {
+                    width: 400px;
+                    text-align: center;
+                    margin: 0 auto;
+
+                    div {
+
+                        &:hover {
+                            cursor: pointer;
+                        }
+
+                        /* Style for "fond" */
+                        width: 111px;
+                        height: 111px;
+                        border-radius: 3px;
+                        text-align: center;
+
+                        margin-left: 10px;
+                        margin-right: 10px;
+
+                        padding-top: 10px;
+                        padding-bottom: 5px;
+
+                        float: left;
+
+                        span {
+                            color: white;
+                            font-size: 60px;
+                        }
+
+                        label {
+                            .exo;
+                            width: 111px;
+                            height: 20px;
+                            color: white;
+
+                            font-size: 15px;
+                            font-weight: 400;
+                            line-height: 20px;
+                            letter-spacing: 0;
+                        }
+
+                        &.track {
+                            background-color: #a47c52;
+                        }
+
+                        &.ecoll {
+                            background-color: #9c005d;
+                        }
+
+                        &.eco {
+                            background-color: #39b34a;
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    #gridPanel {
+        height: 100%;
+        background: #2c2f32;
+
+        .round-container {
+            width: 180px;
+            margin : 0 auto;
+            .round {
+                width: 90px;
+                float: left;
+
+                .blue {
+                    button {
+                        background: #000000
+                    }
+                }
+
+                button {
+                    background: #862332;
+                    color: white;
+                    text-align: center;
+                    width: 70px;
+                    height: 70px;
+                    border-radius: 70px;
+                    span {
+                        font-size: 35px;
+                    }
+                    .neverHasShadow(#862332);
+                    border: none !important;
+                    margin-bottom: 8px;
+                }
+
+                span {
+                    color :white;
+                }
+                text-align: center;
+            }
+        }
+
+        .footer {
+            position     : fixed;
+            bottom       : 0;
+            height       : 140px;
+            margin-left  : -15px;
+            margin-right : -15px!important;
+            padding-right: 15px;
+            padding-left : 15px;
+            overflow     : hidden;
+            width        : 50%;
+            text-align   : center;
+        }
+
+        table {
+            thead {
+                tr {
+                    th {
+                        &:first-child {
+                            width: auto;
+                        }
+                    }
+                }
+            }
+            tbody {
+                tr {
+                    td {
+                        &:first-child {
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

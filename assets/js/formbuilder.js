@@ -6,20 +6,20 @@
 define([
     'underscore',
     'marionette',
-    'homePageModule/router/HomePageRouter',
-    'homePageModule/controller/HomePageController',
     'editionPageModule/router/EditionPageRouter',
     'editionPageModule/controller/EditionPageController',
+    'appPageModule/router/AppPageRouter',
+    'appPageModule/controller/AppPageController',
 
     'backbone.radio'
-], function(_, Marionette, HomePageRouter, HomePageController, EditionPageRouter, EditionPageController, Radio) {
+], function(_, Marionette, EditionPageRouter, EditionPageController, AppPageRouter, AppPageController, Radio) {
 
     //  Create a marionette application
     var FormbuilderApp = new Backbone.Marionette.Application();
 
     //  Add two main region for the layouts
     FormbuilderApp.addRegions({
-        leftRegion  : '#leftSection',
+        homeRegion  : '#homeSection',
         rightRegion : '#rightSection'
     });
 
@@ -29,10 +29,10 @@ define([
 
     //  Add a first initializer that create homepage router
     FormbuilderApp.addInitializer(function(options){
-        //  Create controller for homepage
-        var homePageRouter = new HomePageRouter({
-            controller : new HomePageController({
-                homePageRegion : this.leftRegion,
+          //Create controller for homepage
+        var homePageRouter = new AppPageRouter({
+            controller : new AppPageController({
+                appPageRegion : this.homeRegion,
                 URLOptions : options.URLOptions
             })
         });
@@ -69,8 +69,6 @@ define([
 
 
         this.globalChannel.on('displayHomePage', _.bind(function() {
-
-
             $('#mainRegion').animate({
                 marginLeft : '0%'
             }, 750, _.bind(function() {
