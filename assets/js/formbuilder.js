@@ -23,49 +23,88 @@ define([
 
         var getFromUrl = function(){
             var myself = this;
-            myself.urlArgs = [];
+            myself.urlArgs = {};
 
             var location = window.location.hash.substr(1);
-            myself.urlArgs = location.split('/');
+            $.each(location.split('?'), function(index, value){
+                var splitted = value.split('=');
+                myself.urlArgs[splitted[0]] = (splitted.length>1?splitted[1]:splitted[0]);
+            });
+
+            console.log("args from url = ");
+            console.log(myself.urlArgs);
 
             return (myself.urlArgs);
         };
 
         window.setTimeout(function(){
-            var loadHomepage = function(){
-                window.location.hash = "#";
+            var loaded = false;
 
-                $('#navbarContext').text($.t('navbar.context.home'));
+            var loadEditPage = function(jsonDatas){
+                    loaded = true;
+                    //window.location.hash = "#edition"
 
-                //  Init homepage layout and render it in the homepage region
-                /*
-                var homePageLayout = new HomePageLayout({
-                    URLOptions : options.URLOptions
-                });
-                FormbuilderApp.leftRegion.show(homePageLayout);
-                */
-                Backbone.Radio.channel('global').trigger('displayHomePage');
+                    console.log("loading edition page");
+
+                    Backbone.Radio.channel('global').trigger('displayEditionPage',jsonDatas);
             };
+
+            var loadHomepage = function(){
+                if (!loaded){
+                    loaded = true;
+                    //window.location.hash = "#home";
+
+                    console.log("loading home page");
+
+                    $('#navbarContext').text($.t('navbar.context.home'));
+
+                    var homePageLayout = new HomePageLayout({
+                        URLOptions : options.URLOptions
+                    });
+
+                    Backbone.Radio.channel('global').trigger('displayHomePage');
+                }
+            };
+
             var urlArgs = getFromUrl();
 
-            if (urlArgs[0] == "form"){
+            if ("form" in urlArgs){
                 var formCollection = new FormCollection({
                     url : options.URLOptions.forms
                 });
                 formCollection.fetch({
                     reset : true,
                     success : _.bind(function() {
-                        var formInCollection =  formCollection.get(urlArgs[1]);
-                        if (formInCollection)
-                            Backbone.Radio.channel('global').trigger('displayEditionPage',formInCollection.toJSON());
-                        else
+                        var formInCollection = formCollection.get(urlArgs["form"]);
+                        if (formInCollection){
                             loadHomepage();
+                            loadEditPage(formInCollection.toJSON());
+                        }
+                        else
+                        {
+                            loadHomepage();
+                        }
                     }, this)
                 });
             }
-            else if (urlArgs[0] == "edition" && $("#formsCount").length == 0){
+
+            if ("context" in urlArgs)
+            {
+                console.log("context !");
+                if (urlArgs["context"] != "context"){
+                    console.log("my context is " + urlArgs["context"]);
+                    window.context = urlArgs["context"];
+                    $("#contextSwitcher span:contains('"+urlArgs["context"]+"')").click();
+                    $("#contextSwitcher span:contains('"+urlArgs["context"]+"')").click();
+                }
                 loadHomepage();
             }
+
+            if ("edition" in urlArgs && $("#formsCount").length == 0){
+                console.log("loading REGular edition page");
+                loadHomepage();
+            }
+
         }, 100);
 
     };

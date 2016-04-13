@@ -198,7 +198,8 @@ define([
                     $(data).each(function(){
                         $(".childFormsList").show();
                         if ($("#childform"+this.id).length == 0)
-                            $(".childList").append("<div id='childform"+this.id+"'><a target=_blank href='#form/"+this.id+"'>"+this.name+"</a></div>");
+                            $(".childList").append("<div id='childform"+this.id+"'><a target=_blank href='#context="+
+                                window.context+"?form="+this.id+"'>"+this.name+"</a></div>");
                     });
                 }, this),
                 error: _.bind(function (xhr, ajaxOptions, thrownError) {
