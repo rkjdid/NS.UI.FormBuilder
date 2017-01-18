@@ -1,6 +1,8 @@
 define([
-    'jquery','marionette', '../layout/HomePageLayout', 'backbone.radio', '../models/FormModel', 'app-config', 'i18n'
-], function($, Marionette, HomePageLayout, Radio, FormModel, AppConfig) {
+    'jquery','marionette', '../layout/HomePageLayout', 'backbone.radio', '../models/FormModel', 'app-config', '../../Translater', 'i18n'
+], function($, Marionette, HomePageLayout, Radio, FormModel, AppConfig, Translater) {
+
+    var translater = Translater.getTranslater();
 
     var HomePageController = Marionette.Controller.extend({
 
@@ -37,10 +39,10 @@ define([
          * @param newModel
          */
         createModelWithJSON : function(newModel) {
+
             $.getJSON(this.URLOptions.templateUrl, _.bind(function (data) {
 
                 var template = {};
-
                 for (var each in data) {
                     if (data[each].id == newModel.template) {
                         template = data[each];
@@ -49,6 +51,11 @@ define([
 
                         break;
                     }
+                }
+
+                if (newModel.name)
+                {
+                    template.name = newModel.name
                 }
 
                 var formToEdit = new FormModel(template);
@@ -79,7 +86,11 @@ define([
          * @param newModel
          */
         getTemplate : function(newModel) {
+
             if( newModel.template == 0) {
+
+                if (!newModel.name || newModel.name.length == 0)
+                    newModel.name = translater.getValueFromKey('modal.newForm.title') || "New Form";
                 var formToEdit = new FormModel({
                     id : 0,
                     name : newModel.name
@@ -99,6 +110,7 @@ define([
             var homePageLayout = new HomePageLayout({
                 URLOptions : this.URLOptions
             });
+
             this.homePageRegion.show( homePageLayout );
         },
 

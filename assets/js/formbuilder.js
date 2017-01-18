@@ -13,8 +13,13 @@ define([
     'editionPageModule/controller/EditionPageController',
     'homePageModule/collection/FormCollection',
     'backbone.radio',
-    'app-config'
-], function(_, Marionette, HomePageRouter, HomePageController, HomePageLayout, EditionPageRouter, EditionPageController, FormCollection, Radio, AppConfig) {
+    'app-config',
+    'sweetalert',
+    'Translater'
+], function(_, Marionette, HomePageRouter, HomePageController, HomePageLayout, EditionPageRouter, EditionPageController,
+            FormCollection, Radio, AppConfig, swal, Translater) {
+
+    var translater = Translater.getTranslater();
 
     //  Create a marionette application
     var FormbuilderApp = new Backbone.Marionette.Application();
@@ -48,25 +53,47 @@ define([
             };
             var urlArgs = getFromUrl();
 
-            if (urlArgs[0] == "form"){
+            if (urlArgs[0] == "form" || urlArgs[0].indexOf("form") > -1){
                 var formCollection = new FormCollection({
                     url : options.URLOptions.forms
                 });
                 formCollection.fetch({
                     reset : true,
                     success : _.bind(function() {
-                        var formInCollection =  formCollection.get(urlArgs[1]);
+                        var formInCollection = 0;
+
+                        if (urlArgs[0] == "form")
+                            formInCollection = formCollection.get(urlArgs[1]);
+                        else
+                            formInCollection = formCollection.get(urlArgs[0].split('=')[1]);
+
                         if (formInCollection)
-                            Backbone.Radio.channel('global').trigger('displayEditionPage',formInCollection.toJSON());
+                        {
+                            loadHomepage();
+                            window.setTimeout(function() {
+                                Backbone.Radio.channel('global').trigger('displayEditionPage', formInCollection.toJSON());
+                            }, 2000);
+                        }
                         else
                             loadHomepage();
                     }, this)
                 });
             }
-            else if (urlArgs[0] == "edition" && $("#formsCount").length == 0){
+            else if (urlArgs[0] == "context" || urlArgs[0].indexOf("context") > -1)
+            {
                 loadHomepage();
+                $("#contextSwitcher .selectedContext").trigger("click");
+                if (urlArgs[0] == "context")
+                    $("#contextSwitcher span:contains('" + urlArgs[1] + "')").trigger("click");
+                else
+                    $("#contextSwitcher span:contains('" + urlArgs[0].split('=')[1] + "')").trigger("click");
             }
-        }, 100);
+            else if (urlArgs[0] == "edition" && $("#formsCount").length == 0){
+                window.setTimeout(function() {
+                    loadHomepage();
+                }, 500);
+            }
+        }, 200);
 
     };
 
@@ -117,7 +144,7 @@ define([
                 $('#mainRegion').animate({
                     marginLeft : '-100%'
                 }, 750);
-            }, 300);
+            }, 500);
         }, this));
 
 
@@ -128,8 +155,9 @@ define([
                 this.rightRegion.empty();
                 $('#navbarContext').text($.t('navbar.context.home'));
             }, this));
+            $(".headerWhiteArrow").css("width", "");
         }, this));
-    })
+    });
 
     FormbuilderApp.addInitializer(function(options) {
 
@@ -153,61 +181,126 @@ define([
         if (AppConfig.authmode == 'portal')
         {
             $.ajax({
-            data: JSON.stringify({'securityKey' : AppConfig.securityKey}),
-            type: 'POST',
-            url: options.URLOptions.security + "/isCookieValid",
-            contentType: 'application/json',
-            crossDomain: true,
-            async: false,
-            success: _.bind(function (data) {
-                window.user = data.username;
-            }, this),
-            error: _.bind(function (xhr, ajaxOptions, thrownError) {
-                window.location.href = AppConfig.portalURL;
-            }, this)
-        });
+                data: JSON.stringify({'securityKey' : AppConfig.securityKey}),
+                type: 'POST',
+                url: options.URLOptions.security + "/isCookieValid",
+                contentType: 'application/json',
+                crossDomain: true,
+                async: false,
+                success: _.bind(function (data) {
+                    window.user = data.username;
+                    $("header .user").text(data.username);
+                    $("header .icons.last").removeClass("hidden");
+                }, this),
+                error: _.bind(function (xhr, ajaxOptions, thrownError) {
+                    swal({
+                        title: translater.getValueFromKey('error.cookieCheck') || "Votre identité ne peut être vérifiée",
+                        text: translater.getValueFromKey('error.serverAvailable') || "Le serveur est-il hors ligne ?",
+                        type: "error",
+                        closeOnConfirm: true
+                    }, function(){
+                        window.location.href = AppConfig.portalURL;
+                        window.onkeydown = null;
+                        window.onfocus = null;
+                    });
+                }, this)
+            });
         }
 
         // Adding contexts
         $.each(AppConfig.appMode, function(index, value){
-            if (index.indexOf("demo") == -1 && index != "currentmode" && index != "minimalist")
+            if (index.indexOf("demo") == -1 && index != "topcontext" && index != "minimalist")
             {
-                $("#contextSwitcher").append("<span class='hidden'>"+index+"</span>")
+                $("#contextSwitcher").append("<span class='hidden'>"+index+"</span>");
             }
+        });
+
+        $(".headerWhiteArrow").click(function(){
+            $("#contextSwitcher .selectedContext").trigger("click");
         });
 
         $("#contextSwitcher span").click(function(){
-            if (!$(this).hasClass("selectedContext"))
+            if (window.location.hash.indexOf('#edition') == -1)
             {
-                $("#contextSwitcher .selectedContext").removeClass("selectedContext");
-                $(this).addClass("selectedContext");
-                $(this).trigger("click");
+                if (!$(this).hasClass("selectedContext"))
+                {
+                    $("#contextSwitcher .selectedContext").removeClass("selectedContext");
+                    $(this).addClass("selectedContext");
+                    $(this).trigger("click");
 
-                $('#leftPanel input').val('');
+                    $('#leftPanel input').val('');
 
-                setTimeout(function(){
-                    var context = $("#contextSwitcher .selectedContext").text();
-                    window.context = context;
-                    Backbone.Radio.channel('form').trigger('setFieldCollection', context);
-                    Backbone.Radio.channel('homepage').trigger('setCenterGridPanel', context);
-                }, 50);
-            }
-            else
-            {
-                if ($("#contextSwitcher .hidden").length > 0)
-                    $("#contextSwitcher .hidden").removeClass("hidden");
+                    $("#contextSwitcher .selectedContext").attr("style", "width:auto;");
+                    $("header span.pipe:eq(1)").attr("style", "");
+                    $("#contextSwitcher").attr("style", "position:initial;");
+
+                    setTimeout(function(){
+                        var context = $("#contextSwitcher .selectedContext").text();
+                        window.context = context;
+                        Backbone.Radio.channel('form').trigger('setFieldCollection', context);
+                        Backbone.Radio.channel('homepage').trigger('setCenterGridPanel', context);
+                    }, 100);
+                }
                 else
                 {
-                    $("#contextSwitcher span").addClass("hidden");
-                    $(this).removeClass("hidden");
+                    if ($("#contextSwitcher .hidden").length > 0)
+                    {
+                        $("#contextSwitcher .hidden").removeClass("hidden");
+
+                        $("#contextSwitcher .selectedContext").attr("style", "");
+                        $("header span.pipe:eq(1)").attr("style", "margin-left:180px;");
+                        $("#contextSwitcher").attr("style", "");
+                    }
+                    else
+                    {
+                        $("#contextSwitcher span").addClass("hidden");
+                        $(this).removeClass("hidden");
+
+                        $("#contextSwitcher .selectedContext").attr("style", "width:auto;");
+                        $("header span.pipe:eq(1)").attr("style", "");
+                        $("#contextSwitcher").attr("style", "position:initial;");
+                    }
                 }
             }
         });
+
+        if ($("#contextSwitcher span").length == 2)
+        {
+            $("#contextSwitcher .selectedContext").remove();
+            $("#contextSwitcher span").trigger("click");
+        }
 
         window.onhashchange = function(e)
         {
             fbrouting(options);
         };
+
+        $(".logout").click(function(){
+
+            var delete_cookie = function(name) {
+                document.cookie = name +'=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            };
+
+            delete_cookie(AppConfig.cookieName);
+            setTimeout(function(){window.location.replace(AppConfig.portalURL);},200)
+        });
+
+        window.trees = [];
+        $.each(AppConfig.paths, function(index, value){
+            $.ajax({
+                type        : 'POST',
+                url         : value,
+                contentType : 'application/json',
+                data        : JSON.stringify({StartNodeID:0, deprecated:0, lng:"Fr"}),
+                timeout     : 10000,
+                success: function (data) {
+                    window.trees[value] = data;
+                },
+                error: function () {
+
+                }
+            });
+        });
     });
 
     return FormbuilderApp;

@@ -24,7 +24,7 @@ define([
          * View events
          */
         events: {
-            'click div.col-md-5'                 : 'appendToDrop',
+            'click div.col-md-3'                 : 'appendToDrop',
             'click div.col-md-10'                : 'appendToDrop',
             'click #smallFeatures .scroll > div' : 'appendToDrop',
             'click h3'                           : 'displayContent'
@@ -74,12 +74,15 @@ define([
             if (Fields[elementClassName] !== undefined) {
                 this.formChannel.trigger('addNewElement', elementClassName);
             } else {
-                console.log("err 2");
-                swal(
-                    translater.getValueFromKey('modal.field.error') || "Echec de l'ajout!",
-                    translater.getValueFromKey('modal.field.errorMsg') || "Une erreur est survenue lors de l'ajout du champ !",
-                    "error"
-                );
+                swal({
+                    title:translater.getValueFromKey('modal.field.error') || "Echec de l'ajout!",
+                    text:translater.getValueFromKey('modal.field.errorMsg') || "Une erreur est survenue lors de l'ajout du champ !",
+                    type:"error",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
             }
         },
 
@@ -87,7 +90,8 @@ define([
          * Get Fields information, like section, i18n translation ...
          */
         initSection : function() {
-            var section = { standard : {}, other : {} };
+            var sections = {text: {}, numeric: {}, list: {}, presentation: {}, autocomplete: {}, tree: {}, file: {},
+                other: {}, reneco: {}};
 
             var context = window.context || $("#contextSwitcher .selectedContext").text().toLowerCase();
 
@@ -100,18 +104,23 @@ define([
 
             for (var i in Fields) {
                 if (Fields[i].type !== undefined && checkDisplayMode(Fields[i].type)) {
-                    if (Fields[i].section === undefined) {
-                        section['other'][i] = {
+                    if (Fields[i].section === undefined)
+                    {
+                        sections['other'][i] = {
                             i18n             : i.replace('Field', '').toLowerCase(),
                             doubleColumn     : Fields[i].doubleColumn !== undefined,
                             fontAwesomeClass : Fields[i].fontAwesomeClass
                         }
-                    } else {
-                        if (section[Fields[i].section] === undefined) {
-                            //  create new section
-                            section[ Fields[i].section ] = {};
+                    }
+                    else
+                    {
+                        if (sections[Fields[i].section] === undefined)
+                        {
+                            //  create new sections
+                            sections[ Fields[i].section ] = {};
                         }
-                        section[ Fields[i].section ][i] = {
+
+                        sections[ Fields[i].section ][i] = {
                             i18n             : i.replace('Field', '').toLowerCase(),
                             doubleColumn     : Fields[i].doubleColumn !== undefined,
                             fontAwesomeClass : Fields[i].fontAwesomeClass
@@ -120,7 +129,13 @@ define([
                 }
             }
 
-            this.section = section;
+            for (var section in sections)
+            {
+                if (Object.keys(sections[section]).length == 0)
+                    delete(sections[section]);
+            }
+
+            this.section = sections;
         },
 
         /**
@@ -131,7 +146,7 @@ define([
          * @param e jQuery event
          */
         displayContent : function(e) {
-            var accordion = $(e.currentTarget).data('accordion')
+            var accordion = $(e.currentTarget).data('accordion');
             $('.section[data-accordion!="content-' + accordion + '"]').slideUp(500, function() {
                 $('.section[data-accordion="content-' + accordion + '"]').slideDown(500)
             });
@@ -153,12 +168,14 @@ define([
             // run i18nnext translation in the view context
             this.$el.i18n();
 
+            /*
             //  Add scroll bar
             this.$el.find('.scroll').slimScroll({
                 height       : '89%',
                 railVisible  : true,
                 alwaysVisible: true
             });
+            */
 
             //  Disable selection on field element
             $('.fields').disableSelection();

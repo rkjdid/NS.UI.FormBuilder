@@ -6,12 +6,14 @@ define([
     '../../Translater',
     'sweetalert',
     'app-config',
+    './loaders/ContextLoader',
+    '../models/fields',
     'jquery-ui',
     'i18n',
     'bootstrap-select',
     'slimScroll',
     'bootstrap'
-], function($, Marionette, SettingPanelViewTemplate, Radio, Translater, swal, AppConfig) {
+], function($, Marionette, SettingPanelViewTemplate, Radio, Translater, swal, AppConfig, ContextLoader, Fields) {
 
     var translater = Translater.getTranslater();
 
@@ -35,10 +37,11 @@ define([
             'click #saveChange'           : 'saveChange',
             'click #saveButton'           : 'saveField',
             'click #applyTemplateButton'  : 'applyTemplateField',
+            'click #convertTypeButton'    : 'showConvertType',
+            'click #convertActionButton'  : 'convertAction',
             'change .checkboxField input' : 'checkboxChange',
             'change .form-control'        : 'formControlChange',
             'click #myTabs a' : function(e) {
-                e.preventDefault();
                 $(this).tab('show');
             }
         },
@@ -54,20 +57,22 @@ define([
                     model : this.modelToEdit,
                     type : this.modelToEdit.constructor.type.charAt(0).toLowerCase() + this.modelToEdit.constructor.type.slice(1)
                 });
+
             }
             return ({model: undefined, type:  undefined});
         },
 
-
         /**
         * View constructor, init grid channel
         */
-        initialize : function(options) {
+        initialize : function(options, defaultTemplateList) {
             this.fieldsList             = options.fieldsList;
             this.URLOptions             = options.URLOptions;
             this.modelToEdit            = options.modelToEdit;
-            this.linkedFieldsList       = options.linkedFieldsList;
+            this.linkedFieldsList       = options.linkedFieldsList[window.context];
             this.preConfiguredFieldList = options.preConfiguredFieldList;
+
+            this.savedTemplateFieldList = defaultTemplateList;
 
             this.form               = null;
             this.fieldWithSameType  = null;
@@ -116,6 +121,7 @@ define([
             this.formChannel.on('configurationSaved:success', this.displayConfigurationSaveSuccess, this);
             //  Same thing when an error occured on saved
             this.formChannel.on('configurationSaved:fail', this.displayConfigurationSaveFail, this);
+            this.formChannel.on('cancelFieldEdition', this.cancel, this);
         },
 
 
@@ -125,22 +131,67 @@ define([
         * @param  {Object} field Field with which backbone forms will generate an edition form
         */
         initForm : function() {
+            var that = this;
 
-            this.currentFieldType  = this.modelToEdit.constructor.type;
-            this.fieldWithSameType = this.preConfiguredFieldList[this.currentFieldType];
+            var callBackTemplateRequest = function(fieldList){
 
-            if (this.fieldWithSameType == undefined) {
-                this.$el.find('*[data-setting="field"]').first().hide();
-            } else {
-                // Update available pre configurated field
-                _.each(this.fieldWithSameType, _.bind(function(el, idx) {
-                    this.$el.find('#getField select').append('<option value="' + idx + '">' + idx + '</option>');
-                }, this));
+                that.preConfiguredFieldList = fieldList;
+
+                that.fieldWithSameType = that.preConfiguredFieldList[that.currentFieldType];
+
+                /*
+                if (that.fieldWithSameType == undefined) {
+                    that.$el.find('*[data-setting="field"]').first().hide();
+                } else {
+                    // Update available pre configurated field
+                    _.each(that.fieldWithSameType, _.bind(function(el, idx) {
+                        that.$el.find('#getField select').append('<option value="' + idx + '">' + idx + '</option>');
+                    }, that));
+                }
+                */
+
+                that.$el.find('select').selectpicker();
+
+                that.initInputTemplateList();
+            };
+
+            if (that.savedTemplateFieldList)
+            {
+                callBackTemplateRequest(that.savedTemplateFieldList);
+            }
+            else
+            {
+                $.getJSON(that.URLOptions.preConfiguredField, _.bind(function(fieldList) {
+                    that.mainChannel.trigger('setTemplateList', fieldList);
+                    callBackTemplateRequest(fieldList);
+                }, that));
             }
 
-            this.$el.find('select').selectpicker();
+            that.currentFieldType  = that.modelToEdit.constructor.type;
 
-            this.createForm();
+            that.createForm();
+
+            if ($('#widgetPanel').hasClass('col-md-1')) {
+                $('#formPanel').switchClass('col-md-8', 'col-md-6', 500);
+            }
+
+            if ($('#settingFieldPanel').hasClass('col-md-0')) {
+                $('#settingFieldPanel').switchClass('col-md-0', 'col-md-3', 500);
+                $('#widgetPanel').hide();
+            }
+
+            $(".actions").show();
+        },
+
+        initContextDatas : function() {
+
+            // TODO Idealy, this should be in the contextloaders ... :
+            //  Init linked field
+
+            this.initFormLinkedFields();
+            this.initExtraPropertiesValues();
+
+            ContextLoader.initializeLoader(this.form, this.URLOptions, true);
         },
 
         /**
@@ -157,25 +208,100 @@ define([
          *
          * @param state if the select will be checked or not
          */
-        disableOrEnableLinkedFields : function(state) {
+        disableOrEnableLinkedFields : function(state, disable) {
+            var that = this;
             if (state)
             {
+                this.modelToEdit.set("isLinkedField", true);
                 this.form.fields.linkedField.$el.removeClass('hide');
-                this.form.fields.linkedField.$el.animate({opacity: 1}, 1000);
+                this.form.fields.linkedField.$el.animate({opacity: 1}, 300);
                 this.form.fields.linkedFieldTable.$el.removeClass('hide');
-                this.form.fields.linkedFieldTable.$el.animate({opacity: 1}, 1000);
-                this.form.fields.linkedFieldIdentifyingColumn.$el.removeClass('hide');
-                this.form.fields.linkedFieldIdentifyingColumn.$el.animate({opacity: 1}, 1000);
+                this.form.fields.linkedFieldTable.$el.animate({opacity: 1}, 300);
             }
             else
             {
-                var that = this;
-                this.form.fields.linkedField.$el.animate({opacity: 0}, 1000, function(){
+                this.form.fields.linkedField.$el.animate({opacity: 0}, 300, function(){
                     that.form.fields.linkedField.$el.addClass('hide')});
-                this.form.fields.linkedFieldTable.$el.animate({opacity: 0}, 1000, function(){
+                this.form.fields.linkedFieldTable.$el.animate({opacity: 0}, 300, function(){
                     that.form.fields.linkedFieldTable.$el.addClass('hide')});
-                this.form.fields.linkedFieldIdentifyingColumn.$el.animate({opacity: 0}, 1000, function(){
-                    that.form.fields.linkedFieldIdentifyingColumn.$el.addClass('hide')});
+            }
+
+            if (disable)
+            {
+                if (state)
+                    this.disableOrEnableLinkedFields(false, disable);
+                else
+                {
+                    this.form.fields.isLinkedField.$el.animate({opacity: 0}, 300, function(){
+                        that.form.fields.isLinkedField.$el.addClass('hide')});
+                }
+            }
+        },
+
+        /**
+         * Enable or disable linked field select if the checkbox is checked or not
+         */
+        bindCssEditorsSelect : function() {
+            if (this.form.fields.showCssProperties)
+            {
+                this.form.fields.showCssProperties.editor.$el.find('input').change(_.bind(function(e) {
+                    this.disableOrEnableCssEditionFields($(e.target).is(':checked'));
+                }, this));
+            }
+        },
+
+        /**
+         * Disable or enable linked field select
+         *
+         * @param state if the select will be checked or not
+         */
+        disableOrEnableCssEditionFields : function(state) {
+            if (this.form.fields.showCssProperties)
+            {
+                if (state)
+                {
+                    this.form.fields.editorClass.$el.removeClass('hide');
+                    this.form.fields.editorClass.$el.animate({opacity: 1}, 300);
+                    this.form.fields.fieldClassEdit.$el.removeClass('hide');
+                    this.form.fields.fieldClassEdit.$el.animate({opacity: 1}, 300);
+                    this.form.fields.fieldClassDisplay.$el.removeClass('hide');
+                    this.form.fields.fieldClassDisplay.$el.animate({opacity: 1}, 300);
+                }
+                else
+                {
+                    var that = this;
+                    this.form.fields.editorClass.$el.animate({opacity: 0}, 300, function(){
+                        that.form.fields.editorClass.$el.addClass('hide')});
+                    this.form.fields.fieldClassEdit.$el.animate({opacity: 0}, 300, function(){
+                        that.form.fields.fieldClassEdit.$el.addClass('hide')});
+                    this.form.fields.fieldClassDisplay.$el.animate({opacity: 0}, 300, function(){
+                        that.form.fields.fieldClassDisplay.$el.addClass('hide')});
+                }
+            }
+        },
+
+        initInputTemplateList: function() {
+
+            var hideTemplateApply = true;
+
+            $.each(this.preConfiguredFieldList.options, function(key, value){
+                if ( $("#templateList option[value='"+key+"']").length == 0) {
+                    $('#templateList').append($('<option>', {
+                        value: key,
+                        text: key
+                    }));
+                }
+                hideTemplateApply = false;
+            });
+
+            if (hideTemplateApply)
+            {
+                $(".loadTemplateArea").hide();
+            }
+            else
+            {
+                $("#templateList").selectpicker("refresh");
+                $(".loadTemplateArea").show();
             }
         },
 
@@ -185,37 +311,40 @@ define([
          */
         initFormLinkedFields : function() {
 
-            var linkedFieldsKeyList = [];
-            _.each(this.linkedFieldsList.linkedFieldsList, function(el, idx) {
-                linkedFieldsKeyList.push(el.key)
-            });
+            var disable = true;
 
-            var optionsToShow = {"empty":""};
-            $.each(this.preConfiguredFieldList.options, function(key, value){
-                optionsToShow[key] = key;
-            });
-            this.form.fields.applyTemplate.editor.setOptions(optionsToShow);
+            if (this.linkedFieldsList)
+            {
+                var linkedFieldsKeyList = [];
+                _.each(this.linkedFieldsList.linkedFieldsList, function(el, idx) {
+                    linkedFieldsKeyList.push(el.key)
+                });
 
-            if (! _.contains(['Subform'], this.modelToEdit.constructor.type) &&
-                ! _.contains(['ChildForm'], this.modelToEdit.constructor.type)) {
-                if (this.fieldsList.length > 0) {
+                if (! _.contains(['Subform'], this.modelToEdit.constructor.type) &&
+                    ! _.contains(['ChildForm'], this.modelToEdit.constructor.type)) {
                     //  Update linked fields
                     this.form.fields.linkedField.editor.setOptions(linkedFieldsKeyList);
                     this.form.fields.linkedFieldTable.editor.setOptions(this.linkedFieldsList.tablesList);
-                    this.form.fields.linkedFieldIdentifyingColumn.editor.setOptions(this.linkedFieldsList.identifyingColumns);
-
-                    //  Disable all select at start
-                    this.disableOrEnableLinkedFields(false);
-                    this.bindLinkedFieldSelect();
-
-                } else {
-                    //  In this case there is only one field in the form so it can't be a linked field
-                    //  We add hide class to hide editor
-                    this.form.fields.isLinkedField.$el.addClass('hide');
-                    this.form.fields.linkedField.$el.addClass('hide');
-                    this.form.fields.linkedFieldTable.$el.addClass('hide');
-                    this.form.fields.linkedFieldIdentifyingColumn.$el.addClass('hide');
                 }
+
+                disable = linkedFieldsKeyList.length == 0 || this.linkedFieldsList.tablesList.length == 0 ||
+                    this.linkedFieldsList.identifyingColumns.length == 0;
+            }
+
+            var attr = this.modelToEdit.attributes;
+
+            //  Disable all select at start
+            this.disableOrEnableCssEditionFields(false);
+            this.disableOrEnableLinkedFields(attr.linkedField && attr.linkedFieldTable, disable);
+            this.bindLinkedFieldSelect();
+            this.bindCssEditorsSelect();
+        },
+
+        initExtraPropertiesValues : function(){
+
+            if (this.modelToEdit.collection.tracktypes)
+            {
+                this.form.fields.trackType.editor.setOptions(this.modelToEdit.collection.tracktypes);
             }
         },
 
@@ -225,7 +354,15 @@ define([
         * @param  {[Object]} field to edit
         */
         createForm : function() {
+            if (this.todelete)
+            {
+                delete this;
+                return;
+            }
+            this.todelete = true;
             require(['backbone-forms'], _.bind(function() {
+
+                var that = this;
 
                 Backbone.Form.validators.errMessages.required = translater.getValueFromKey('form.validation');
 
@@ -252,15 +389,14 @@ define([
                     model: this.modelToEdit
                 }).render();
 
-                //  Init linked field
-                this.initFormLinkedFields();
+                this.initContextDatas();
 
                 this.$el.find('#form').append(this.form.el)
 
                 // Send an event to editionPageLayout to notify that form is created
                 this.mainChannel.trigger('formCreated');
 
-                 this.form.$el.on('change input[name="decimal"]', _.bind(function(e) {
+                this.form.$el.on('change input[name="decimal"]', _.bind(function(e) {
                     if ($(e.target).is(':checked')) {
                         this.form.$el.find('.field-precision').addClass('advanced');
                     } else {
@@ -268,55 +404,131 @@ define([
                     }
                 }, this));
 
-                 if (_.contains(['Thesaurus', 'AutocompleteTreeView'], this.modelToEdit.constructor.type)) {
+                if (_.contains(['Thesaurus', 'AutocompleteTreeView', 'Position'], this.modelToEdit.constructor.type)) {
+                    var pathname = "fullpath";
+                    if (this.modelToEdit.constructor.type == "Position")
+                        pathname = "positionPath";
+
                     var WebServiceUrl = $("[name='webServiceURL']").val();
+
+                    var savednode = this.modelToEdit.get('defaultNode');
+
+                    var callbackWSCall = function(data){
+                        var transformed = $.map(data.children, function (el) {
+                            return {
+                                label: el.fullpath,
+                                id: el.key,
+                                data: el
+                            };
+                        });
+                        response(transformed);
+                    };
+
+                    var createFullpathAutocomplete = function(){
+                        $('input[name="'+pathname+'"]').autocomplete({
+                            scrollHeight: 220,
+                            source: function (request, response) {
+                                if (window.trees[WebServiceUrl]) {
+                                    callBackWSCall(window.trees[WebServiceUrl]);
+                                }
+                                else {
+                                    $.ajax({
+                                        type        : 'POST',
+                                        url         : WebServiceUrl,
+                                        contentType : 'application/json',
+                                        data        : JSON.stringify({
+                                            StartNodeID:$("#defaultNode").fancytree("getActiveNode") || 0,
+                                            deprecated:0,
+                                            lng:"Fr"}),
+                                        success: function (data) {
+                                            callbackWSCall(data);
+                                        },
+                                        error: function () {
+                                            response([]);
+                                        }
+                                    });
+                                }
+                            },
+                            select: function(event, ui){
+                                $("#defaultNode").fancytree("getTree").getNodeByKey(ui.item.id).setActive();
+                                $("#defaultNode").fancytree("getTree").getNodeByKey(ui.item.id).setExpanded(true);
+                                that.globalChannel.trigger('nodeSelected' + that.modelToEdit.get('id'), ui.item.data);
+                                $('input[name="'+pathname+'"]').val(ui.item.label);
+                            }
+                        });
+                    };
 
                     if (WebServiceUrl)
                     {
+                        $('input[name="defaultNode"]').replaceWith('<div id="defaultNode"></div>');
                         if (WebServiceUrl.substring(0,5) == 'http:' ) {
-                            $('input[name="defaultNode"]').replaceWith('<div id="defaultNode"></div>');
 
-                            $.ajax({
-                                data        : JSON.stringify({StartNodeID: AppConfig.config.startID, lng: "fr"}),
-                                type        : 'POST',
-                                url         : WebServiceUrl,
-                                contentType : 'application/json',
-                                //  If you run the server and the back separately but on the same server you need to use crossDomain option
-                                //  The server is already configured to used it
-                                crossDomain : true,
+                            var startID = AppConfig.config.startID[this.modelToEdit.constructor.type.toLowerCase()][window.context];
+                            if (!startID)
+                                startID = AppConfig.config.startID[this.modelToEdit.constructor.type.toLowerCase()].default;
 
-                                //  Trigger event with ajax result on the formView
-                                success: _.bind(function(data) {
-                                    $('#defaultNode').fancytree({
-                                        source     : data,
-                                        checkbox   : false,
-                                        selectMode : 1,
-                                        activeNode :AppConfig.config.startID,
-                                        activate : _.bind(function(event, data) {
-                                            this.globalChannel.trigger('nodeSelected' + this.modelToEdit.get('id'), data);
-                                        }, this)
+                            var tosend = JSON.stringify({StartNodeID: startID, lng: "fr"});
 
-                                    });
-                                }, this),
-                            });
+                            var callbackWSCall = function(data){
+                                $('#defaultNode').fancytree({
+                                    source     : data,
+                                    checkbox   : false,
+                                    selectMode : 1,
+                                    activeNode : startID,
+                                    click : _.bind(function(event, data) {
+                                        that.globalChannel.trigger('nodeSelected' + that.modelToEdit.get('id'), data);
+                                        $('input[name="'+pathname+'"]').val(data.node.data.fullpath);
+                                        createFullpathAutocomplete();
+                                    }, this)
+                                });
+                                $('#defaultNode').fancytree("getTree").activateKey(savednode);
+                            };
+
+                            if (window.trees[WebServiceUrl]) {
+                                callbackWSCall(window.trees[WebServiceUrl]);
+                            }
+                            else {
+                                $.ajax({
+                                    data: tosend,
+                                    type: 'POST',
+                                    url: WebServiceUrl,
+                                    contentType: 'application/json',
+                                    //  If you run the server and the back separately but on the same server you need to use crossDomain option
+                                    //  The server is already configured to used it
+                                    crossDomain: true,
+
+                                    //  Trigger event with ajax result on the formView
+                                    success: _.bind(function (data) {
+                                        callbackWSCall(data);
+                                    }, this)
+                                });
+                            }
                         }
                         else {
-                            $.getJSON(AppConfig.paths.thesaurusWSPath, _.bind(function(data) {
-
-                                $('input[name="defaultNode"]').replaceWith('<div id="defaultNode"></div>');
+                            var callBackWSCall = function(data){
                                 $('#defaultNode').fancytree({
                                     source: data['d'],
                                     checkbox : false,
                                     selectMode : 1,
-                                    activate : _.bind(function(event, data) {
+                                    click : _.bind(function(event, data) {
                                         this.globalChannel.trigger('nodeSelected' + this.modelToEdit.get('id'), data);
                                     }, this)
                                 });
+                                $('#defaultNode').fancytree("getTree").activateKey(savednode);
+                            };
 
-                            }, this)).error(function(a,b,c) {
-                                alert ("can't load ressources !");
-                            });
+                            if (window.trees[AppConfig.paths.thesaurusWSPath]) {
+                                callBackWSCall(window.trees[AppConfig.paths.thesaurusWSPath]);
+                            }
+                            else {
+                                $.getJSON(AppConfig.paths.thesaurusWSPath, _.bind(function(data) {
+                                    callBackWSCall(data);
+                                }, this)).error(function(a,b,c) {
+                                    alert ("can't load ressources !");
+                                });
+                            }
                         }
+                        createFullpathAutocomplete();
                     }
                 } else if (this.modelToEdit.constructor.type === 'TreeView') {
 
@@ -327,6 +539,112 @@ define([
                  }
 
                 this.initScrollBar();
+
+                var getAllFieldsetsNames = function()
+                {
+                    var toret = [];
+
+                    $.each(that.modelToEdit.collection.models, function(index, value){
+                        var linkedFieldset = value.attributes.linkedFieldset;
+                        if (linkedFieldset && linkedFieldset.length > 0)
+                            toret.push(linkedFieldset);
+                    });
+
+                    return (toret);
+                };
+
+                var getAllInputNames = function()
+                {
+                    var toret = [];
+
+                    $.each(that.modelToEdit.collection.models, function(index, value){
+                        var linkedFieldset = value.attributes.linkedFieldset;
+                        if (linkedFieldset && linkedFieldset.length > 0)
+                            toret.push(linkedFieldset);
+                    });
+
+                    return (toret);
+                };
+
+                var elLinkedFieldset = $("#settingFieldPanel [name='linkedFieldset']");
+
+                if (elLinkedFieldset.length > 0)
+                {
+                    elLinkedFieldset.autocomplete({
+                        minLength: 0,
+                        source : getAllFieldsetsNames()
+                    }).focus(function(){
+                        $(this).autocomplete("search");
+                    });
+                }
+
+                var elFieldName = $("#settingFieldPanel [name='name']");
+
+                if (elFieldName.length > 0)
+                {
+                    elFieldName.autocomplete({
+                        minLength: 1,
+                        source : this.modelToEdit.collection.contextInputNames
+                    });
+                }
+
+                var getCompatibleInputs = function()
+                {
+                    var toret = [];
+                    var compatibilityToUse = AppConfig.allowedConvert.default;
+
+                    if (AppConfig.allowedConvert[window.context])
+                        compatibilityToUse = AppConfig.allowedConvert[window.context];
+
+                    $.each(compatibilityToUse, function(index, value){
+                        if (_.contains(value, that.modelToEdit.constructor.type))
+                        {
+                            $.each(value, function(subindex, subvalue){
+                                if (subvalue != that.modelToEdit.constructor.type)
+                                    toret.push(subvalue);
+                            });
+                        }
+                    });
+
+                    return(toret);
+                };
+
+                var hideTypeConverter = true;
+                $.each(getCompatibleInputs(), function(index, value){
+                    if ( $("#inputTypeList option[value='"+value+"']").length == 0)
+                    {
+                        $('#inputTypeList').append($('<option>', {
+                            value: value,
+                            text: value
+                        }));
+                    }
+                    hideTypeConverter = false;
+                });
+
+                if (hideTypeConverter)
+                {
+                    $(".convertArea").hide();
+                }
+                else
+                {
+                    $("#inputTypeList").selectpicker("refresh");
+                }
+
+                $.each(that.form.fields, function(index, value){
+                    if (value.schema.validators && value.schema.validators[0] == "required")
+                    {
+                        console.log("compulsory field ! ", index, value);
+
+                        $(value.$el).find("label").append(" <span style='color: red;'>*</span>");
+                        //$("#settingFieldPanel #form label[for="+that.modelToEdit.cid+"_"+index+"]").append(" <span style='color: red;'>*</span>");
+                    }
+                });
+
+                if(that.modelToEdit.attributes.originalID && that.modelToEdit.attributes.originalID > 0)
+                {
+                    $("#originalIDArea").show();
+                    $("#fieldOriginalID").text(that.modelToEdit.attributes.originalID);
+                }
 
             }, this));
         },
@@ -365,7 +683,7 @@ define([
                     ]}
                 ],
                 selectMode : 1,
-                activate : _.bind(function(event, data) {
+                click : _.bind(function(event, data) {
                     this.mainChannel.trigger('nodeSelected' + field.get('id'), data);
                 }, this)
             });
@@ -379,19 +697,21 @@ define([
             //  I know it's bad but it works for the moment ;)
             setTimeout(_.bind(function() {
                 this.$el.find('#form').html('');
-                this.form.undelegateEvents();
-                this.form.$el.removeData().unbind();
-                this.form.remove();
-                Backbone.View.prototype.remove.call(this.form);
+
+                if (this.form){
+                    // TODO undelegate ?
+                    this.form.undelegateEvents();
+                    this.form.$el.removeData().unbind();
+                    this.form.remove();
+                    Backbone.View.prototype.remove.call(this.form);
+                }
 
                 //  Update scrollBar
                 this.$el.find('.scroll').scrollTop(0);
                 this.$el.find('.scroll').slimScroll('update');
 
                 this.form = null;
-            }, this), 300);
-            //  My prefered music for developpement
-            //  https://www.youtube.com/watch?v=YKhNbKplIYA
+            }, this), 500);
         },
 
 
@@ -421,7 +741,7 @@ define([
             this.$el.find('.scroll').slimScroll({scrollTo: "0px"});
             setTimeout(_.bind(function(){
                 this.$el.find('.scroll').scrollTop(0);
-            }, this), 100);
+            }, this), 200);
         },
 
         /**
@@ -442,23 +762,29 @@ define([
                 this.form.setValue({'required': false});
                 this.$el.find('input[name="required"]').prop('checked', false)
             }
-
-            //this.$el.find('input[name="endOfLine"]').prop('checked', choice['endOfLine'] != undefined)
         },
 
 
         /**
         * Send an event on form channel when user wants to clear current form
         */
-        cancel : function(){
-
+        cancel : function(event, avoidUserValidation, idCondition){
             var self = this;
+
+            if (idCondition && self.form)
+            {
+                if (self.form.model.id != idCondition)
+                    return ;
+            }
+
+            self.globalChannel.trigger('nodeReset' + self.modelToEdit.get('id'));
+
             var cancelSettingPanel = function(){
                 self.removeForm();
                 self.mainChannel.trigger('formCancel');
             };
 
-            if (this.hasFieldsChanged){
+            if (this.hasFieldsChanged && !avoidUserValidation){
                 swal({
                     title: translater.getValueFromKey('configuration.cancel.yousure') || "Vraiment ?",
                     text: translater.getValueFromKey('configuration.cancel.unsavedchanges') || "Vous avez effectué de changements !",
@@ -467,8 +793,14 @@ define([
                     confirmButtonColor: "#DD6B55",
                     confirmButtonText: translater.getValueFromKey('configuration.cancel.yescancel') || "Oui, quitter !",
                     cancelButtonText: translater.getValueFromKey('configuration.cancel.stay') || "Non, continuer.",
-                    closeOnConfirm: false }, function(){cancelSettingPanel();
-                    $(".sweet-alert").find("button").trigger("click");});
+                    closeOnConfirm: true }, function(){
+                    //TODO Find out why this timeout fixes the "hiding right panel issue"
+                        setTimeout(function(){
+                            cancelSettingPanel();
+                            window.onkeydown = null;
+                            window.onfocus = null;
+                        }, 50);
+                    });
             }
             else {
                 cancelSettingPanel();
@@ -483,9 +815,9 @@ define([
             var nameCounter = 0;
             var that = this;
             var savedDefaultNode = this.modelToEdit.get("defaultNode");
+            var savedFullpath = this.modelToEdit.get("fullpath");
 
             $.each(this.modelToEdit.collection.models, function(value, index){
-
                 if (index.attributes.name == $("#form [name='name']").val())
                 {
                     if (that.modelToEdit.attributes.name != $("#form [name='name']").val()){
@@ -511,30 +843,48 @@ define([
                     if (this.modelToEdit.attributes.defaultNode != undefined)
                     {
                         this.modelToEdit.set("defaultNode", savedDefaultNode);
+                        this.modelToEdit.set("fullpath", savedFullpath);
                     }
 
                     if (!this.modelToEdit.get('isLinkedField')) {
                         this.modelToEdit.set('linkedField', '');
-                        this.modelToEdit.set('linkedFieldIdentifyingColumn', '');
                         this.modelToEdit.set('linkedFieldTable', '');
                     }
 
                     this.formChannel.trigger('field:change', this.modelToEdit.get('id'));
 
-                    this.mainChannel.trigger('formCommit');
                     this.removeForm();
+                    this.mainChannel.trigger('formCommit');
+
+                    $("#dropField"+this.modelToEdit.get('id')+" .field-label span").css("color", "white");
                 }
                 else
                 {
-                    console.log(commitResult);
+                    this.$el.find('.scroll').scrollTop(0);
+                    this.$el.find('.scroll').scrollTop( $($("#settingFieldPanel [name='" + Object.keys(commitResult)[0] + "']")).offset().top -
+                        this.$el.find('.scroll').offset().top - 60);
+
+                    swal({
+                        title:translater.getValueFromKey('modal.save.uncompleteFielderror') || "Erreur",
+                        text:translater.getValueFromKey('modal.save.uncompleteFieldProp') || "Champ obligatoire non renseigné",
+                        type:"error",
+                        closeOnConfirm: true
+                    }, function(){
+                        window.onkeydown = null;
+                        window.onfocus = null;
+                    });
                 }
             }
             else {
-                swal(
-                    translater.getValueFromKey('configuration.save.fail') || "Echec !",
-                    translater.getValueFromKey('configuration.save.samename') || "Votre champs ne peut avoir le même nom qu'un autre champ du formulaire",
-                    "error"
-                )
+                swal({
+                    title:translater.getValueFromKey('configuration.save.fail') || "Echec !",
+                    text:translater.getValueFromKey('configuration.save.samename') || "Votre champs ne peut avoir le même nom qu'un autre champ du formulaire",
+                    type:"error",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
             }
         },
 
@@ -546,10 +896,14 @@ define([
             var formCommitResult = this.form.commit();
             if (formCommitResult) {
 
-                //  If something wrong we move to the first incorrect field
-                var offsetTop = $('input[name="' + Object.keys(formCommitResult)[0] + '"]').offset().top;
-                this.$el.find('.scroll').scrollTop( offsetTop );
-                this.$el.find('.scroll').slimScroll('update');
+                console.log(this.$el.find('.scroll'));
+                console.log(this.$el.find('.scroll').offset().top);
+                console.log($("#settingFormPanel [name='" + Object.keys(formCommitResult)[0] + "']"));
+                console.log($($("#settingFormPanel [name='" + Object.keys(formCommitResult)[0] + "']")).offset().top);
+
+                this.$el.find('.scroll').scrollTop(0);
+                this.$el.find('.scroll').scrollTop( $($("#settingFieldPanel [name='" + Object.keys(formCommitResult)[0] + "']")).offset().top -
+                    this.$el.find('.scroll').offset().top - 60);
 
             } else {
                 var formValue = this.form.getValue();
@@ -562,8 +916,9 @@ define([
         },
 
         applyTemplateField : function() {
-            var templateInputName = $("select[name*=applyTemplate]").val();
-            templateInputName = $("select[name*=applyTemplate] option[value='" + templateInputName + "']").text();
+            var that = this;
+
+            var templateInputName = $("#templateList option:selected").text();
             if (templateInputName.length > 0){
                 $.ajax({
                     data: {},
@@ -571,16 +926,29 @@ define([
                     url: this.URLOptions.fieldConfigurationURL + "/" + templateInputName,
                     contentType: 'application/json',
                     crossDomain: true,
-                    success: _.bind(function (data) {
-                        var that = this;
+                    success: function (data) {
+                        var modattr = that.modelToEdit.attributes;
                         $.each(data.result, function(key, value){
-                            if (that.modelToEdit.attributes[key] != undefined && key != "name" && key != "id")
+                            if (key != "name" && key != "id")
                             {
-                                that.modelToEdit.attributes[key] =  value;
+                                modattr[key] =  value;
                             }
                         });
-                        that.render();
-                    }, this),
+
+                        modattr.isLinkedField = modattr.linkedField && modattr.linkedField.length > 0 &&
+                            modattr.linkedFieldTable && modattr.linkedFieldTable.length > 0;
+
+                        that.formChannel.trigger('editModel', that.modelToEdit.get('id'));
+                        swal({
+                            title:translater.getValueFromKey('configuration.save.loadsuccess') || "Chargement réussit !",
+                            text:translater.getValueFromKey('configuration.save.loadsuccessMsg') || "Le template a bien été chargé",
+                            type:"success",
+                            closeOnConfirm: true
+                        }, function(){
+                            window.onkeydown = null;
+                            window.onfocus = null;
+                        });
+                    },
                     error: _.bind(function (xhr, ajaxOptions, thrownError) {
                         console.log("Ajax Error: " + xhr);
                     }, this)
@@ -593,7 +961,7 @@ define([
         */
         checkboxChange : function(e) {
             this.hasFieldsChanged = true;
-            $('label[for="' + $(e.target).prop('id') + '"]').toggleClass('selected')
+            $('label[for="' + $(e.target).prop('id') + '"]').toggleClass('selected');
         },
 
         /**
@@ -601,29 +969,87 @@ define([
          */
         formControlChange : function(e) {
             this.hasFieldsChanged = true;
+            switch(e.currentTarget.name)
+            {
+                case "defaultValue":
+                    swal({
+                        title: translater.getValueFromKey('modal.editionField.fieldEditAlert') || "Alerte d'édition de champ",
+                        text: translater.getValueFromKey('modal.editionField.defaultValueEdit') || "Attention, en éditant la propriété 'valeur par défaut', vous pourriez avoir envie de mettre a jour les données de bases de données liées à cette valeur",
+                        type: "info",
+                        closeOnConfirm: true
+                    }, function(){
+                        window.onkeydown = null;
+                        window.onfocus = null;
+                    });
+                    break;
+                case "linkedFieldTable":
+                    if (window.context == "ecoreleve")
+                        $("input[name='linkedFieldIdentifyingColumn']").val("FK_" + $(e.currentTarget).val());
+                    break;
+            }
         },
 
+        showConvertType : function() {
+            $(".convertStep1").hide();
+            $(".convertStep2").show();
+            var scrollableFieldSettings = $('#settingFieldPanel .slimScrollDiv .scroll');
+            $(scrollableFieldSettings).scrollTop($(scrollableFieldSettings)[0].scrollHeight);
+        },
+
+        convertAction : function() {
+            var that = this;
+            swal({
+                title              : translater.getValueFromKey('settings.actions.convertTitle') || "Confirmation de convertion",
+                text               : translater.getValueFromKey('settings.actions.convertValidate') || "L'input sera convertit sans retour possible !",
+                type               : "warning",
+                showCancelButton   : true,
+                confirmButtonColor : "#DD6B55",
+                confirmButtonText  : translater.getValueFromKey('settings.actions.convertYes') || "Oui, convertir",
+                cancelButtonText   : translater.getValueFromKey('settings.actions.convertNo') || "Annuler",
+                closeOnConfirm: true
+            }, function(isConfirm) {
+                if (isConfirm) {
+                    that.formChannel.trigger('remove', that.modelToEdit.attributes.id, true);
+                    var fieldType = $("#inputTypeList option:selected").text() + 'Field';
+                    that.modelToEdit.attributes.id = 0;
+                    that.formChannel.trigger('addNewElement', fieldType, that.modelToEdit.attributes);
+                    that.formChannel.trigger('editModel', that.modelToEdit.get('id'));
+                }
+
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
+        },
 
         /**
          * Display success message when field has been saved as pre configurated field
          */
         displayConfigurationSaveSuccess : function() {
-            swal(
-                translater.getValueFromKey('configuration.save.success') || "Sauvé !",
-                translater.getValueFromKey('configuration.save.successMsg') || "Votre champs a bien été sauvgeardé",
-                "success"
-            )
+            this.mainChannel.trigger('unsetTemplateList');
+            swal({
+                title:translater.getValueFromKey('configuration.save.success') || "Sauvé !",
+                text:translater.getValueFromKey('configuration.save.successMsg') || "Votre champs a bien été sauvgeardé",
+                type:"success",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         },
 
         /**
          * Display en error message when field couldn't be saved
          */
         displayConfigurationSaveFail : function() {
-            swal(
-                translater.getValueFromKey('configuration.save.fail') || "Echec !",
-                translater.getValueFromKey('configuration.save.failMsg') || "Votre champs n'a pas pu être sauvegardé",
-                "error"
-            )
+            swal({
+                title:translater.getValueFromKey('configuration.save.fail') || "Echec !",
+                text:translater.getValueFromKey('configuration.save.failMsg') || "Votre champs n'a pas pu être sauvegardé",
+                type:"error",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         }
 
     });

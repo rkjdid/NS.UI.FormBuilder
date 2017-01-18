@@ -45,6 +45,7 @@
         <link rel="stylesheet" href="libs/jquery.pillbox.js/css/jquery.pillbox.css"/>
 	    <!-- require js -->
 	    <script data-main="assets/js/config" type="text/javascript" src='libs/requirejs/require.js'></script>
+
 	</head>
 	<body>
 
@@ -53,8 +54,9 @@
                 <span class="reneco reneco-formbuildersmall"></span>&nbsp; formbuilder
             </a>
             <span class="pipe">&#124;</span>
-            <span id="contextSwitcher" class="formbuilderMode title">
-                <span class="selectedContext">All</span>
+            <span id="contextSwitcher" class="formbuilderMode title" style="position:initial;">
+                <img class="headerWhiteArrow" src="assets/images/down_arrow_white.png"/>
+                <span class="selectedContext" style="width:auto;">All</span>
 
             </span>
             <span class="pipe">&#124;</span>
@@ -62,14 +64,15 @@
                 Home
             </span>
             <div class="pull-right">
-                <div class="icons">
-                    <span class="reneco reneco-cloud2"></span>
-                    <span class="reneco reneco-checked"></span>
+                <span class="logout">Logout</span>
+            </div>
+            <div class="pull-right">
+                <div class="icons hidden">
                 </div>
-                <div class="icons last">
+                <div class="icons last hidden">
                     <span class="reneco reneco-user"></span>
                 </div>
-                <span class="user">Don MICELI</span>
+                <span class="user"></span>
             </div>
         </header>
 

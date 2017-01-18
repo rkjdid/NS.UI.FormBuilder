@@ -5,22 +5,53 @@
     color: red;
 }
 
-#settingPanel {
+#formOriginalIdArea {
+    float:right;
+    display:none;
+}
 
-    position      : absolute;
+#settingFormPanel {
+    position: absolute;
+    .slimScrollDiv {
+        height: ~"calc(100% - 198px)" !important;
+        margin-top: 5px;
+    }
+}
+
+#settingFieldPanel {
+    position: relative;
+    .slimScrollDiv {
+        height: ~"calc(100% - 228px)" !important;
+        margin-top: 15px;
+    }
+
+    #defaultNode {
+        max-height: 400px;
+        overflow: auto;
+    }
+
+    #originalIDArea {
+        display: none;
+        color: white;
+        margin-top: 20px;
+    }
+
+}
+
+#settingFormPanel, #settingFieldPanel {
+
     overflow      : hidden;
-    z-index       : 0;
     background    : @settingViewBackgroundColor;
     padding-bottom: 50px;
     height        : 100%;
-
+    font-family: 'ProximaNovaLight', sans-serif;
 
     .brand {
-        padding-left  : 15px;
+        padding-left  : 0px;
         padding-bottom: 10px;
 
         &.field-brand {
-            top: 40px;
+            top: 32px;
         }
 
         &:not(.form) {
@@ -34,7 +65,7 @@
                     text-transform: uppercase;
 
                     &:last-child {
-                        font-size     : 28px;
+                        font-size     : 24px;
                         color         : white;
                         font-weight   : 100;
                         text-transform: none;
@@ -44,12 +75,13 @@
                 &.picto
                 {
                     float         : left;
-                    width         : 119px;
-                    height        : 119px;
+                    width         : 80px;
+                    height        : 80px;
                     text-align    : center;
                     vertical-align: bottom;
-                    font-size     : 105px;
+                    font-size     : 80px;
                     color         : #706f6f;
+                    margin-right  : 10px;
                 }
             }
         }
@@ -58,12 +90,12 @@
             span {
                 &:first-child {
                     .reneco;
-                    padding-top   : 26px;
+                    padding-top   : 40px;
                     float         : left;
-                    width         : 119px;
-                    height        : 119px;
+                    width         : 80px;
+                    height        : 90px;
                     vertical-align: bottom;
-                    font-size     : 105px;
+                    font-size     : 80px;
                     color         : #706f6f;
                 }
                 &:last-child {
@@ -79,9 +111,9 @@
     footer {
         height     : 80px;
         position   : absolute;
-        bottom     : 55px;
+        bottom     : 30px;
         background : #000;
-        padding-top: 7px;
+        padding-top: 0px;
         width      : 100%!important;
         overflow   : hidden;
     }
@@ -91,11 +123,11 @@
     }
 
     .slimScrollDiv {
-        height: ~"calc(100% - 140px)" !important;
         .scroll {
             position      : relative;
             overflow      : hidden;
-            padding-bottom: 40px;
+            width: auto !important;
+            height: 100% !important;
         }
     }
 
@@ -194,7 +226,7 @@
     }
 
     form label {
-        font-family: 'Exo 2', sans-serif;
+        font-family: 'ProximaNovaLight', sans-serif;
         font-size  : 18px;
         line-height: 50px;
         height     : 30px;
@@ -204,7 +236,7 @@
     }
 
     .outerform {
-        font-family: 'Exo 2', sans-serif;
+        font-family: 'ProximaNovaLight', sans-serif;
         font-size  : 18px;
         line-height: 40px;
         height     : 30px;
@@ -381,7 +413,7 @@
                 background-color: transparent;
                 border          : none;
                 padding-left    : 0;
-                font-size: 18px;
+                font-size: 14px;
                 text-align: left;
                 font-weight: 500;
             }
@@ -389,6 +421,84 @@
         }
     }
 
+    .convertArea {
+
+        .convertStep2 {
+            display: none;
+            padding-bottom: 20px;
+        }
+
+        .chooseTypeLabel {
+            margin-top: 20px;
+        }
+
+        #convertTypeButton, #convertActionButton {
+            margin-top: 20px !important;
+        }
+    }
+
+    .loadTemplateArea {
+
+        margin-top: -20px;
+
+        .chooseTemplateLabel {
+            padding-right: 0;
+            margin-top: 30px;
+        }
+
+        .bootstrap-select {
+            width:100%;
+            padding-right: 15px;
+        }
+
+        #applyTemplateButton {
+            margin-top: 10px !important;
+            margin-bottom: 10px !important;
+            height: 35px !important;
+            width: 30px !important;
+        }
+
+        hr {
+            margin-bottom: -10px;
+            width: 100%;
+        }
+    }
+
+    .saveTemplateArea {
+
+        #saveButton {
+            margin-top: 20px !important;
+        }
+    }
+
+    .addFileText {
+        width:70%;
+        display:inline;
+    }
+
+    input[type=submit] {
+        background: #862332;
+        margin-left: 5px;
+        margin-bottom: 5px;
+        border-color: #862332;
+        color:white;
+    }
+
+    #formAssociatedFileListLabel {
+        display:none;
+        font-size:18px;
+        color:#575656;
+    }
+
+    #formLinkedFilesList {
+        color:white;
+        font-size:12px;
+    }
+
+    .removeFileAssoc, .downloadFileAssoc {
+        margin-left: 10px;
+        cursor: pointer;
+    }
 }
 
 /* icons */
@@ -624,4 +734,12 @@
             content: "\e641"
         }
     }
+}
+
+.fancytree-active, .fancytree-active .fancytree-title{
+    color: black !important;
+}
+
+#formPanel .fancytree-focused, #formPanel .fancytree-focused .fancytree-title{
+    color: white !important;
 }

@@ -1,21 +1,27 @@
 define([
     'jquery',
     'marionette',
-    'text!editionPageModule/templates/FormPanelView.html',
-    'text!editionPageModule/templates/FormPanelViewRO.html',
+    'text!editionPageModule/templates/FormPanel/View.html',
+    'text!editionPageModule/templates/FormPanel/ViewRO.html',
+    'text!editionPageModule/templates/FormPanel/Reneco/View.html',
+    'text!editionPageModule/templates/FormPanel/Reneco/ViewRO.html',
     'sweetalert',
     '../../Translater',
+    '../../app-config',
+    '../collection/staticInputs/ContextStaticInputs',
+    '../models/fields',
     'i18n',
     'slimScroll'    
-], function($, Marionette, FormPanelViewTemplate, FormPanelViewTemplateRO, swal, Translater) {
+], function($, Marionette, FormPanelViewTpl, FormPanelViewRO, FormPanelViewReneco, FormPanelViewROReneco, swal,
+            Translater, AppConfig, ContextStaticInputs, Fields) {
 
     var translater = Translater.getTranslater();
+    var staticInputs = ContextStaticInputs;
     
     /**
      * The form view represents the current form. It's a the edition module main view.
      */
     var FormPanelView = Backbone.Marionette.ItemView.extend({
-
 
         /**
          * jQuery events triggered by the form view
@@ -27,7 +33,8 @@ define([
             'click #export'       : 'export',
             'click #clearAll'     : 'clear',
             'click #save'         : 'save',
-            'click #exit'         : 'exit'
+            'click #exit'         : 'exit',
+            'click .sizepreview'  : 'sizepreview'
         },
 
 
@@ -37,7 +44,19 @@ define([
          * @return {string} Compiled underscore template
          */
         template : function() {
-            return _.template(FormPanelViewTemplate)({
+            var topcontext = "";
+            if (AppConfig.appMode.topcontext != "classic")
+            {
+                topcontext = AppConfig.appMode.topcontext
+            }
+
+            if (topcontext == "reneco")
+            {
+                return _.template(FormPanelViewReneco)({
+                    collection : this.collection.getAttributesValues()
+                });
+            }
+            return _.template(FormPanelViewTpl)({
                 collection : this.collection.getAttributesValues()
             });
         },
@@ -48,25 +67,77 @@ define([
          * @param  {object} options configuration options like web service URL for back end connection
          */
         initialize : function(options, readonly) {
+            var topcontext = "";
+            var context = window.context || $("#contextSwitcher .selectedContext").text();
+            var that = this;
+
+            if (AppConfig.appMode.topcontext != "classic")
+            {
+                topcontext = AppConfig.appMode.topcontext
+            }
+
             if (readonly)
+            {
                 this.template = function(){
-                    return _.template(FormPanelViewTemplateRO)({
+                    return _.template(FormPanelViewRO)({
                         collection : this.collection.getAttributesValues()
                     })};
+                if (topcontext == "reneco")
+                    this.template = function(){
+                        return _.template(FormPanelViewROReneco)({
+                            collection : this.collection.getAttributesValues()
+                        })};
+            }
+
             this.collection     = options.fieldCollection;
             this._view          = {};
             this.URLOptions     = options.URLOptions;
             this._viewCount     = 0;
 
+            if (context == "track")
+            {
+                $.ajax({
+                    data: {},
+                    type: 'GET',
+                    url:  this.URLOptions.trackTypes + "/" + "fr",
+                    contentType: 'application/json',
+                    crossDomain: true,
+                    success: _.bind(function (data) {
+                        data = JSON.parse(data);
+                        that.collection.tracktypes = data.types;
+                    }, this),
+                    error: _.bind(function (xhr, ajaxOptions, thrownError) {
+                        console.log("Ajax Error: " + xhr);
+                    }, this)
+                });
+            }
+
+            $.ajax({
+                data: {},
+                type: 'GET',
+                url:  this.URLOptions.forms + "/getAllInputNames/" + context,
+                contentType: 'application/json',
+                crossDomain: true,
+                success: _.bind(function (data) {
+                    data = JSON.parse(data);
+                    that.collection.contextInputNames = data;
+                }, this),
+                error: _.bind(function (xhr, ajaxOptions, thrownError) {
+                    console.log("Ajax Error: " + xhr);
+                }, this)
+            });
+
             //  Bind collection events
             this.collection.bind('add', this.addElement, this);         //  new element added on the collection
             this.collection.bind('remove', this.removeElement, this);   //  element removed from the collection
 
-            _.bindAll(this, 'template', 'save')
+            _.bindAll(this, 'template', 'save');
 
             this.initFormChannel();
             this.initMainChannel();
             this.initCollectionChannel();
+
+            setStatics(context);
         },
 
         /**
@@ -114,6 +185,7 @@ define([
             this.formChannel.on('save:fail',      this.displayFailMessage);
             this.formChannel.on('save:formIncomplete',      this.displayIncompleteFormMessage);
             this.formChannel.on('save:fieldIncomplete',      this.displayIncompleteFieldMessage);
+            this.formChannel.on('save:hasDuplicateFieldNames',      this.displayHasDuplicateFieldNames);
 
             this.formChannel.on('template:success',      this.displaytemplateMessage);
             this.formChannel.on('template:fail',      this.displayFailtemplatee);
@@ -147,9 +219,9 @@ define([
          * @param  {Object} collection updated attributes
          */
         updateCollectionAttributes : function(newCollectionAttributes) {
-            this.enableFooterActions();
             this.collection.updateCollectionAttributes(newCollectionAttributes);
             this.updateName();
+            this.enableFooterActions();
         },
 
         /**
@@ -157,8 +229,7 @@ define([
         * Channel send on the form channel
         */
         formSettings : function() {
-            this.$el.find('#edit').animate({opacity : 0.2}).prop('disabled', true);
-            this.disableFooterActionsAndExit();
+
             this.formChannel.trigger('editForm', this.collection);
         },
 
@@ -198,8 +269,10 @@ define([
                     var vue = new fieldView({
                         el: '#' + id,
                         model: newModel,
-                        collection: this.collection
-                    }, Backbone.Radio.channel('global').readonly);
+                        collection: this.collection,
+                        urlOptions: this.URLOptions
+                    }, Backbone.Radio.channel('global').readonly ||
+                        $.inArray(newModel.attributes.name, staticInputs.getCompulsoryInputs()) != -1);
                     if (vue !== null) {
                         vue.render();
                         this._view[id] = vue;
@@ -215,11 +288,15 @@ define([
                     $(".actions").i18n();
 
                 }, this), function (err) {
-                    swal(
-                        translater.getValueFromKey('modal.field.error' + err) || "Echec de l'ajout!",
-                        translater.getValueFromKey('modal.field.errorMsg' + err) || "Une erreur est survenue lors de l'ajout du champ !",
-                        "error"
-                    );
+                    swal({
+                        title: translater.getValueFromKey('modal.field.error' + err) || "Echec de l'ajout!",
+                        text: translater.getValueFromKey('modal.field.errorMsg' + err) || "Une erreur est survenue lors de l'ajout du champ !",
+                        type: "error",
+                        closeOnConfirm: true
+                    }, function(){
+                        window.onkeydown = null;
+                        window.onfocus = null;
+                    });
                 });
 
             }
@@ -250,6 +327,8 @@ define([
          * Rendering callback
          */
         onRender : function(options) {
+
+            this.updateName();
             //  By default marionette wrap template with a div
             //  We remove it and update view HTML element reference
             this.$el = this.$el.children();
@@ -274,7 +353,7 @@ define([
             this.$el.find('.drop').disableSelection();
 
             this.$el.find('#scrollSection').slimScroll({
-                height        : '90%',
+                height        : 'calc(100% - 20px)',
                 railVisible   : true,
                 alwaysVisible : true,
                 railColor     : "#111"
@@ -284,8 +363,6 @@ define([
 
             //  Send an event to notify the render is done
             this.formChannel.trigger('renderFinished');
-
-            this.updateName();
         },
 
         /**
@@ -329,7 +406,11 @@ define([
          * Trigger an event for the router on the form channel
          */
         save : function() {
-            this.checkRules();
+            //TODO DEPRECATED, RULES MANAGER FOR FORM VALIDATION
+            //TODO find a better way ... collection save is send inside a callback
+            //this.checkRules();
+
+            this.saveCollection();
         },
 
         checkRules : function(callbackAfterRulesCheck) {
@@ -364,7 +445,11 @@ define([
         },
 
         displayRuleMessage : function(error) {
-            swal(error.title, error.content, "error");
+            swal({title:error.title, text:error.content, type:"error",
+                closeOnConfirm: true}, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         },
 
         /**
@@ -381,22 +466,31 @@ define([
                 confirmButtonColor : "#DD6B55",
                 confirmButtonText  : translater.getValueFromKey('modal.clear.yes') || "Oui, supprimer",
                 cancelButtonText   : translater.getValueFromKey('modal.clear.no') || "Annuler",
-                closeOnConfirm     : false,
+                closeOnConfirm     : true,
                 closeOnCancel      : true
             }, function(isConfirm) {
 
                 if (isConfirm) {
                     _.map(self._view, function(el) {
                         el.removeView();
-                    })
-                    swal(
-                        translater.getValueFromKey('modal.clear.deleted') || "Supprimé !",
-                        translater.getValueFromKey('modal.clear.formDeleted') || "Votre formulaire a été supprimé !",
-                        "success"
-                    );
+                    });
+                    swal({
+                        title:translater.getValueFromKey('modal.clear.deleted') || "Supprimé !",
+                        text:translater.getValueFromKey('modal.clear.formDeleted') || "Votre formulaire a été supprimé !",
+                        type:"success",
+                        closeOnConfirm: true
+                    }, function(){
+                        window.onkeydown = null;
+                        window.onfocus = null;
+                    });
+
                     self.collection.clearAll();
                     self._viewCount = 0;
+                    self.updateFieldCount();
                 }
+
+                window.onkeydown = null;
+                window.onfocus = null;
             });
 
         },
@@ -408,17 +502,25 @@ define([
          */
         displayExportMessage : function(result) {
             if (result) {
-                swal(
-                    translater.getValueFromKey('modal.export.success') || "Export réussi !",
-                    "",
-                    "success"
-                )
+                swal({
+                    title:translater.getValueFromKey('modal.export.success') || "Export réussi !",
+                    text:"",
+                    type:"success",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
             } else {
-                swal(
-                    translater.getValueFromKey('modal.export.error') || "Echec de l'export !",
-                    translater.getValueFromKey('modal.export.errorMsg') || "Une erreur est survenue lors de l'export",
-                    "error"
-                )
+                swal({
+                    title:translater.getValueFromKey('modal.export.error') || "Echec de l'export !",
+                    text:translater.getValueFromKey('modal.export.errorMsg') || "Une erreur est survenue lors de l'export",
+                    type:"error",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
             }
         },
 
@@ -426,38 +528,81 @@ define([
          * Display a message when the form has been saved
          */
         displaySucessMessage : function() {
-            swal(
-                translater.getValueFromKey('modal.save.success') || "Sauvé !",
-                translater.getValueFromKey('modal.save.successMsg') || "Votre formulaire a été enregistré sur le serveur !",
-                "success"
-            );
+            swal({
+                title: translater.getValueFromKey('modal.save.success') || "Sauvé !",
+                text: translater.getValueFromKey('modal.save.successMsg') || "Votre formulaire a été enregistré sur le serveur !",
+                type: "success",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         },
 
         /**
          * Display a message if the form couldn't be saved
          */
-        displayFailMessage : function() {
-            swal(
-                translater.getValueFromKey('modal.save.error') || "Une erreur est survenue !",
-                translater.getValueFromKey('modal.save.errorMsg') || "Votre formulaire n'a pas été enregistré !\nPensez à faire un export",
-                "error"
-            );
+        displayFailMessage : function(textKey, textValue) {
+            if (textKey)
+            {
+                swal({
+                    title:translater.getValueFromKey('modal.save.error') || "Une erreur est survenue !",
+                    text:translater.getValueFromKey(textKey) + (textValue ? textValue : "") || "Votre formulaire n'a pas été enregistré !\nPensez à faire un export",
+                    type:"error",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
+            }
+            else
+            {
+                swal({
+                    title:translater.getValueFromKey('modal.save.error') || "Une erreur est survenue !",
+                    text:translater.getValueFromKey('modal.save.errorMsg') || "Votre formulaire n'a pas été enregistré !\nPensez à faire un export",
+                    type:"error",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
+            }
         },
 
         displayIncompleteFormMessage: function() {
-            swal(
-                translater.getValueFromKey('modal.save.uncompleteFormerror') || "Une erreur est survenue !",
-                translater.getValueFromKey('modal.save.uncompleteForm') || "Votre formulaire n'a pas été totallement renseigné",
-                "error"
-            );
+            swal({
+                title:translater.getValueFromKey('modal.save.uncompleteFormerror') || "Une erreur est survenue !",
+                text:translater.getValueFromKey('modal.save.uncompleteForm') || "Votre formulaire n'a pas été totallement renseigné",
+                type:"error",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         },
 
         displayIncompleteFieldMessage: function() {
-            swal(
-                translater.getValueFromKey('modal.save.uncompleteFielderror') || "Une erreur est survenue !",
-                translater.getValueFromKey('modal.save.uncompleteField') || "Un de vos champs n'a pas été totallement renseigné",
-                "error"
-            );
+            swal({
+                title:translater.getValueFromKey('modal.save.uncompleteFielderror') || "Une erreur est survenue !",
+                text:translater.getValueFromKey('modal.save.uncompleteField') || "Un de vos champs n'a pas été totallement renseigné",
+                type:"error",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
+        },
+
+        displayHasDuplicateFieldNames: function() {
+            swal({
+                title:translater.getValueFromKey('modal.save.hasDuplicateFieldNamesError') || "Une erreur est survenue !",
+                text:translater.getValueFromKey('modal.save.hasDuplicateFieldNames') || "Certains de vos champs ont des noms identiques",
+                type:"error",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         },
 
         /**
@@ -487,7 +632,7 @@ define([
             //this.$el.find('.dropField').not(modelToKeepSelectedID).css('background', 'red');
 
             this.$el.find('.dropField').not(modelToKeepSelectedID).find('.element').removeClass('selected');
-            this.$el.find('.dropField').not(modelToKeepSelectedID).find('.actions').removeClass('locked');
+            // REMOVED FOR NOW this.$el.find('.dropField').not(modelToKeepSelectedID).find('.actions').removeClass('locked');
         },
 
         /**
@@ -525,6 +670,9 @@ define([
                     if (isConfirm) {
                         self.clearFormAndExit();
                     }
+
+                    window.onkeydown = null;
+                    window.onfocus = null;
                 });
             }
             else
@@ -536,6 +684,7 @@ define([
          * The controller does the redirection, the view send just an event
          */
         clearFormAndExit : function() {
+            Fields.getFormsListResult = undefined;
             this.collection.reset();
             this.formChannel.trigger('exit');
             this._viewCount = 0;
@@ -545,33 +694,76 @@ define([
          * Set H1 text when the update is done
          */
         updateName: function () {
-            this.$el.find('#collectionName').text(this.collection.name)
+            this.$el.find('#collectionName').text(this.collection.name);
+            console.log("this.collection.originalID", this.collection.originalID);
+            console.log("this.collection", this.collection);
+            console.log("this", this);
+            if (this.collection.originalID && this.collection.originalID > 0)
+            {
+                this.$el.find('#formOriginalIdArea').show();
+                this.$el.find('#formOriginalID').text(this.collection.originalID);
+            }
         },
 
         collectionUpdateFinished : function() {
             this.updateName();
-            //this.$el.find('#scrollSection').scrollTop(0);
-            //this.$el.find('#scrollSection').animate({ scrollTop: 0 }, "fast");
+            this.formSettings();
         },
 
 
 
         displaytemplateMessage : function() {
-            swal(
-                translater.getValueFromKey('modal.template.success') || "Sauvé !",
-                translater.getValueFromKey('modal.template.successMsg') || "Votre formulaire a été enregistré comme template !",
-                "success"
-            );
+            swal({
+                title:translater.getValueFromKey('modal.template.success') || "Sauvé !",
+                text:translater.getValueFromKey('modal.template.successMsg') || "Votre formulaire a été enregistré comme template !",
+                type:"success",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         },
 
         displayFailtemplatee : function() {
-            swal(
-                translater.getValueFromKey('modal.template.error') || "Une erreur est survenu !",
-                translater.getValueFromKey('modal.template.errorMsg') || "Votre formulaire n'a pas été enregistré comme template.",
-                "error"
-            );
+            swal({
+                title:translater.getValueFromKey('modal.template.error') || "Une erreur est survenu !",
+                text:translater.getValueFromKey('modal.template.errorMsg') || "Votre formulaire n'a pas été enregistré comme template.",
+                type:"error",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
+        },
+
+        sizepreview : function() {
+            var previewBtn = $(".sizepreview");
+            if(previewBtn.hasClass("selected"))
+            {
+                previewBtn.removeClass("selected");
+                $.each(this.collection.models, function(index, value){
+                    var currentInput = $(".dropField#dropField" + value.id);
+                    currentInput.removeClass("col-xs-" + value.attributes.fieldSize);
+                });
+                $(".actions").show();
+            }
+            else
+            {
+                previewBtn.addClass("selected");
+                $.each(this.collection.models, function(index, value){
+                    var currentInput = $(".dropField#dropField" + value.id);
+                    currentInput.addClass("col-xs-" + value.attributes.fieldSize);
+                });
+                $(".actions").hide();
+            }
         }
     });
+
+    var setStatics = function(staticsToSet){
+        var context = staticsToSet ||  window.context || $("#contextSwitcher .selectedContext").text();
+        if (context.toLowerCase() != "all")
+            staticInputs = ContextStaticInputs.getStaticMode(context);
+    };
 
     return FormPanelView;
 

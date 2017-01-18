@@ -2,18 +2,22 @@ define([
     'jquery',
     'underscore',
     'marionette',
-    'text!../templates/CenterGridPanelView.html',
-    'text!../templates/CenterGridPanelViewRO.html',
-    'text!../templates/CenterGridPanelViewAllContext.html',
+    'text!../templates/CenterGridPanel/View.html',
+    'text!../templates/CenterGridPanel/ViewRO.html',
+    'text!../templates/CenterGridPanel/ViewAllContext.html',
+    'text!../templates/CenterGridPanel/Reneco/ViewRO.html',
+    'text!../templates/CenterGridPanel/Reneco/ViewAllContext.html',
     'backgrid',
     '../../Translater',
     '../collection/FormCollection',
     '../models/FormModel',
     'backbone.radio',
     'sweetalert',
+    '../../app-config',
     'slimScroll'
-    ], function($, _, Marionette, CenterGridPanelViewTemplate, CenterGridPanelViewTemplateRO,
-                CenterGridPanelViewTemplateAllContext, Backgrid, Translater, FormCollection, FormModel, Radio, swal) {
+    ], function($, _, Marionette, GridPanelView, GridPanelViewRO, GridPanelViewAllContext, GridPanelViewROReneco,
+                GridPanelViewAllContextReneco, Backgrid, Translater, FormCollection, FormModel, Radio, swal,
+                AppConfig) {
 
     var translater = Translater.getTranslater();
 
@@ -41,7 +45,7 @@ define([
          * Custom template from HTML file
          * We prefer use HTML file for each view instead script tag in one file for example
          */
-        template: CenterGridPanelViewTemplate,
+        template: GridPanelView,
 
         /**
          * View construcotr
@@ -52,21 +56,37 @@ define([
         initialize : function(options, readonly) {
             var context = $("#contextSwitcher .selectedContext").text();
 
+            var topcontext = "";
+            if (AppConfig.appMode.topcontext != "classic")
+            {
+                topcontext = AppConfig.appMode.topcontext
+            }
+
             if (context.toLowerCase() == "all")
-                this.template = CenterGridPanelViewTemplateAllContext;
+            {
+                this.template = GridPanelViewAllContext;
+                if (topcontext == "reneco")
+                    this.template = GridPanelViewAllContextReneco;
+            }
+
             if (readonly)
-                this.template = CenterGridPanelViewTemplateRO;
+            {
+                this.template = GridPanelViewRO;
+                if (topcontext == "reneco")
+                    this.template = GridPanelViewROReneco;
+            }
             _.bindAll(this, 'addFormSection', 'displayFormInformation', 'updateGridWithSearch', 'deleteForm')
 
             this.URLOptions = options.URLOptions;
 
-            this.currentSelectedForm = 0;
+            this.currentSelectedForm = -1;
+            this.clearFooterAction();
 
             this.initGlobalChannel();
             this.initGridChannel();
             this.initHomePageChannel();
 
-            this.scrollSize = options.scrollSize || '90%';
+            this.scrollSize = options.scrollSize || '100%';
             this.importProtocolModalView = null;
         },
 
@@ -134,17 +154,25 @@ define([
             // But if I add a setTimeout( .. ), it works but it's ugly
 
             if (result) {
-                swal(
-                    translater.getValueFromKey('modal.deleted.title') || 'Formulaire supprimé !',
-                    translater.getValueFromKey('modal.deleted.text') || 'Votre formulaire a été supprimé avec succès',
-                    "success"
-                );
+                swal({
+                    title:translater.getValueFromKey('modal.deleted.title') || 'Formulaire supprimé !',
+                    text:translater.getValueFromKey('modal.deleted.text') || 'Votre formulaire a été supprimé avec succès',
+                    type:"success",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
             } else {
-                swal(
-                    translater.getValueFromKey('modal.errorDeleted.title') || 'Formulaire n\'a pas pu êtresupprimé !',
-                    translater.getValueFromKey('modal.errorDeleted.text') || 'Une erreur est survenue lors de la suppression du formulaire',
-                    "error"
-                )
+                swal({
+                    title:translater.getValueFromKey('modal.errorDeleted.title') || 'Formulaire n\'a pas pu êtresupprimé !',
+                    text:translater.getValueFromKey('modal.errorDeleted.text') || 'Une erreur est survenue lors de la suppression du formulaire',
+                    type:"error",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
             }
         },
 
@@ -169,13 +197,17 @@ define([
                 confirmButtonColor : "#DD6B55",
                 confirmButtonText  : translater.getValueFromKey('modal.clear.yes') || "Oui, supprimer",
                 cancelButtonText   : translater.getValueFromKey('modal.clear.no') || "Annuler",
-                closeOnCancel      : true
+                closeOnCancel      : true,
+                closeOnConfirm: true
             }, function(isConfirm) {
                 if (isConfirm){
                     // Send event to FormCollection if user chosen to remove a form
                     //self.homePageChannel.trigger('deleteForm', formToRemove)
                     self.formCollection.deleteModel(formToRemove);
                 }
+
+                window.onkeydown = null;
+                window.onfocus = null;
             });
         },
 
@@ -188,7 +220,6 @@ define([
         addFormSection : function(el, model) {
             var context = $("#contextSwitcher .selectedContext").text();
             // TODO To Move
-            //alert(context);
             if (context.toLowerCase() == "all" || context.toLowerCase() == model.get('context'))
             {
                 el.after(
@@ -258,15 +289,23 @@ define([
                 var el      = elementAndModel['el'],
                     model   = elementAndModel['model'];
 
-                if ($('.formInformation').length > 0) {
-                    $('.formInformation').fadeOut(100, _.bind(function() {
-                        $('.padding').slideUp(500);
-                        $('.formInformation').remove()
-                        $('tr.selected').removeClass('selected');
+                if (AppConfig.appMode.topcontext == "reneco")
+                {
+                    $('tr.selected').removeClass('selected');
+                    el.addClass('selected');
+                }
+                else
+                {
+                    if ($('.formInformation').length > 0) {
+                        $('.formInformation').fadeOut(100, _.bind(function() {
+                            $('.padding').slideUp(500);
+                            $('.formInformation').remove()
+                            $('tr.selected').removeClass('selected');
+                            this.addFormSection(el, model);
+                        }, this));
+                    } else {
                         this.addFormSection(el, model);
-                    }, this));
-                } else {
-                    this.addFormSection(el, model);
+                    }
                 }
 
                 this.beforeFormSelection = this.currentSelectedForm;
@@ -288,7 +327,6 @@ define([
 
             this.beforeFormSelection = this.currentSelectedForm;
             this.currentSelectedForm = -1;
-
             this.clearFooterAction();
         },
 
@@ -296,6 +334,7 @@ define([
          * Remove footer action except new and import action
          */
         clearFooterAction : function() {
+            $('tr.selected').removeClass('selected');
             this.$el.find('footer').animate({
                 bottom : '-80px'
             }, 500);
@@ -307,7 +346,7 @@ define([
          */
         updateFooterAction : function() {
             this.$el.find('footer').animate({
-                bottom : '0'
+                bottom : '-25px'
             }, 500);
             $('#add, #import').switchClass('red', 'grey', 1);
         },
@@ -318,12 +357,14 @@ define([
          * @returns {Backgrid.Row} custom clickable row
          */
         initClickableRow : function() {
-
+            var that = this;
+            var selectedForm = this.currentSelectedForm;
             // By default grid not fired click event
             // But we can't create a small clickable row to get the event
             return Backgrid.Row.extend({
                 events: {
-                    "click": "onClick"
+                    "click": "onClick",
+                    "dblclick": "onDblClick"
                 },
 
                 /**
@@ -336,6 +377,11 @@ define([
                         model   : this.model,
                         el      : this.$el
                     });
+                },
+                onDblClick: function() {
+                    if (that.currentSelectedForm == -1)
+                        this.onClick();
+                    that.editForm();
                 }
             });
         },
@@ -344,6 +390,7 @@ define([
          * Initialize backgrid instance
          */
         initGrid : function() {
+
             this.grid = new Backgrid.Grid({
 
                 row: this.initClickableRow(),
@@ -368,6 +415,7 @@ define([
                     cell     : 'string',
                     editable : false
                 }],
+
                 collection : this.formCollection
             });
         },
@@ -414,6 +462,11 @@ define([
                     $(this.el).find("#grid2").html( $(this.el).find("#grid").html() );
                     //  Keep only one table row to lighten table
                     $(this.el).find("#grid2 tbody tr").slice(1).remove();
+
+                    var that = this;
+                    $(this.el).find("#grid2 th a").on("click", function(){
+                        $(that.el).find("#grid th."+$(this).parent().attr('class').replace(/ /g, ".")+" a").click();
+                    });
                 }, this),
                 error : _.bind(function() {
                     this.displayFetchError();
@@ -427,11 +480,20 @@ define([
          * Display error when the front is unable to fetch form list from the server
          */
         displayFetchError : function() {
-            swal(
-                translater.getValueFromKey('fetch.error') || "Erreur de récupération des formulaires !",
-                translater.getValueFromKey('fetch.errorMsg') || "Impossible de récupérer la liste des formulaires depuis le serveur",
-                "error"
-            );
+            /* DISABLED FOR NOW
+            setTimeout(function(){
+                swal({
+                    title:translater.getValueFromKey('fetch.error') || "Erreur de récupération des formulaires !",
+                    text:translater.getValueFromKey('fetch.errorMsg') || "Impossible de récupérer la liste des formulaires depuis le serveur",
+                    type:"error",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
+            }, 50);
+            */
+
             this.hideSpinner();
         },
 
@@ -441,7 +503,7 @@ define([
         hideSpinner : function(duration) {
             setTimeout(_.bind(function() {
                 this.$el.find('.spinner').addClass('end', 250);
-            }, this), duration || 250);
+            }, this), duration || 400);
         },
 
         /**
@@ -585,7 +647,9 @@ define([
             var formToEdit = this.formCollection.get(this.currentSelectedForm);
             //  Send an event to the formbuilder
             //  Two modules never speak directly, all communication pass htrough formbuilder App
+            // TODO TODO
             this.globalChannel.trigger('displayEditionPage', formToEdit.toJSON());
+            this.hideContextList();
         },
 
         /**
@@ -611,17 +675,28 @@ define([
 
                 $('body').append('<div class="modal fade" id="newFormModal"></div>');
 
-                require(['homePageModule/modals/NewFormModalView'], _.bind(function(NewFormModalView) {
-                    var newFormModalView = new NewFormModalView({
-                        el : '#newFormModal',
-                        templates : data,
-                        onClose : _.bind(function(name, template) {
-                            this.createFormModel(name, template);
-                        }, this)
-                    });
+                if (AppConfig.appMode.topcontext != "reneco")
+                {
+                    require(['homePageModule/modals/NewFormModalView'], _.bind(function(NewFormModalView) {
+                        var tmpOptions = {
+                            el : '#newFormModal',
+                            templates : data,
+                            onClose : _.bind(function(name, template) {
+                                this.createFormModel(name, template);
+                            }, this)
+                        };
 
-                    newFormModalView.render();
-                }, this));
+                        var newFormModalView = new NewFormModalView(tmpOptions);
+
+                        newFormModalView.render();
+                    }, this));
+                }
+                else
+                {
+                    //this.globalChannel.trigger('displayEditionPage', {});
+                    this.createFormModel("", 0);
+                }
+                this.hideContextList();
 
             }, this));
 
@@ -674,34 +749,50 @@ define([
                                             //  Trigger event with ajax result on the formView
                                             success: _.bind(function(data) {
                                                 this.resetCollection();
-                                                swal(
-                                                    translater.getValueFromKey('modal.import.success') || "Succès",
-                                                    translater.getValueFromKey('modal.import.successMsg') || "Le formulaire a bien été importé",
-                                                    "success"
-                                                );
+                                                swal({
+                                                    title:translater.getValueFromKey('modal.import.success') || "Succès",
+                                                    text:translater.getValueFromKey('modal.import.successMsg') || "Le formulaire a bien été importé",
+                                                    type:"success",
+                                                    closeOnConfirm: true
+                                                }, function(){
+                                                    window.onkeydown = null;
+                                                    window.onfocus = null;
+                                                });
                                             }, this),
                                             error: _.bind(function(xhr, ajaxOptions, thrownError) {
-                                                swal(
-                                                    translater.getValueFromKey('modal.import.error') || "Une erreur est survenue !",
-                                                    translater.getValueFromKey('modal.import.errorMsg') || "Votre formulaire n'a pas pu être importé",
-                                                    "error"
-                                                );
+                                                swal({
+                                                    title:translater.getValueFromKey('modal.import.error') || "Une erreur est survenue !",
+                                                    text:translater.getValueFromKey('modal.import.errorMsg') || "Votre formulaire n'a pas pu être importé",
+                                                    type:"error",
+                                                    closeOnConfirm: true
+                                                }, function(){
+                                                    window.onkeydown = null;
+                                                    window.onfocus = null;
+                                                });
                                             }, this)
                                         });
 
                                     } else {
-                                        swal(
-                                            translater.getValueFromKey('modal.import.error') || "Une erreur est survenue !",
-                                            translater.getValueFromKey('modal.import.errorMsg') || "Votre formulaire n'a pas pu être importé",
-                                            "error"
-                                        );
+                                        swal({
+                                            title:translater.getValueFromKey('modal.import.error') || "Une erreur est survenue !",
+                                            text:translater.getValueFromKey('modal.import.errorMsg') || "Votre formulaire n'a pas pu être importé",
+                                            type:"error",
+                                            closeOnConfirm: true
+                                        }, function(){
+                                            window.onkeydown = null;
+                                            window.onfocus = null;
+                                        });
                                     }
                                 } catch (e) {
-                                    swal(
-                                        translater.getValueFromKey('modal.import.error') || "Une erreur est survenue !",
-                                        translater.getValueFromKey('modal.import.errorMsg') || "Votre formulaire n'a pas pu être importé",
-                                        "error"
-                                    );
+                                    swal({
+                                        title:translater.getValueFromKey('modal.import.error') || "Une erreur est survenue !",
+                                        text:translater.getValueFromKey('modal.import.errorMsg') || "Votre formulaire n'a pas pu être importé",
+                                        type:"error",
+                                        closeOnConfirm: true
+                                    }, function(){
+                                        window.onkeydown = null;
+                                        window.onfocus = null;
+                                    });
                                 }
                             }, this));
                         }
@@ -728,12 +819,16 @@ define([
             //  A discussion is opened on Github : https://github.com/t4t5/sweetalert/issues/253
             setTimeout(_.bind(function() {
                 this.resetCollection();
-                swal(
-                    translater.getValueFromKey('modal.clear.deleted') || "Supprimé !",
-                    translater.getValueFromKey('modal.clear.formDeleted') || "Votre formulaire a été supprimé !",
-                    "success"
-                );
-            }, this), 250)
+                swal({
+                    title:translater.getValueFromKey('modal.clear.deleted') || "Supprimé !",
+                    text:translater.getValueFromKey('modal.clear.formDeleted') || "Votre formulaire a été supprimé !",
+                    type:"success",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
+            }, this), 500)
         },
 
         /**
@@ -743,11 +838,15 @@ define([
             //  Same problem as previous function
             //  A discussion is opened on Github : https://github.com/t4t5/sweetalert/issues/253
             setTimeout(_.bind(function() {
-                swal(
-                    translater.getValueFromKey('modal.clear.deleteError') || "Non supprimé !",
-                    translater.getValueFromKey('modal.clear.formDeletedError') || "Votre formulaire n'a pas pu être supprimé !",
-                    "error"
-                );
+                swal({
+                    title:translater.getValueFromKey('modal.clear.deleteError') || "Non supprimé !",
+                    text:translater.getValueFromKey('modal.clear.formDeletedError') || "Votre formulaire n'a pas pu être supprimé !",
+                    type:"error",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
             }, this), 500)
         },
 
@@ -758,17 +857,25 @@ define([
          */
         displayExportMessage : function(result) {
             if (result) {
-                swal(
-                    translater.getValueFromKey('modal.export.success') || "Export réussi !",
-                    "",
-                    "success"
-                )
+                swal({
+                    title:translater.getValueFromKey('modal.export.success') || "Export réussi !",
+                    text:"",
+                    type:"success",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
             } else {
-                swal(
-                    translater.getValueFromKey('modal.export.error') || "Echec de l'export !",
-                    translater.getValueFromKey('modal.export.errorMsg') || "Une erreur est survenue lors de l'export",
-                    "error"
-                )
+                swal({
+                    title:translater.getValueFromKey('modal.export.error') || "Echec de l'export !",
+                    text:translater.getValueFromKey('modal.export.errorMsg') || "Une erreur est survenue lors de l'export",
+                    type:"error",
+                    closeOnConfirm: true
+                }, function(){
+                    window.onkeydown = null;
+                    window.onfocus = null;
+                });
             }
         },
 
@@ -816,32 +923,53 @@ define([
          * Display a message if the form has been duplicated and saved
          */
         displayDuplicateFail : function() {
-            swal(
-                translater.getValueFromKey('modal.duplicate.error') || "Une erreur est survenue !",
-                translater.getValueFromKey('modal.duplicate.errorMsg') || "Votre formulaire n'a pas pas être dupliqué !",
-                "error"
-            );
+            swal({
+                title:translater.getValueFromKey('modal.duplicate.error') || "Une erreur est survenue !",
+                text:translater.getValueFromKey('modal.duplicate.errorMsg') || "Votre formulaire n'a pas pas être dupliqué !",
+                type:"error",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         },
 
         /**
          * Display an error message if an error occurred during duplication or save
          */
         displayDuplicateSuccess : function() {
-            swal(
-                translater.getValueFromKey('modal.duplicate.success') || "Dupliqué !",
-                translater.getValueFromKey('modal.duplicate.successMsg') || "Votre formulaire a été dupliqué et enregistré sur le serveur !",
-                "success"
-            );
+            swal({
+                title:translater.getValueFromKey('modal.duplicate.success') || "Dupliqué !",
+                text:translater.getValueFromKey('modal.duplicate.successMsg') || "Votre formulaire a été dupliqué et enregistré sur le serveur !",
+                type:"success",
+                closeOnConfirm: true
+            }, function(){
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         },
 
         setCenterGridPanel : function(context)
         {
-            this.template = CenterGridPanelViewTemplate;
+            this.template = GridPanelView;
             if (context.toLowerCase() == "all")
-                this.template = CenterGridPanelViewTemplateRO;
-            this.currentSelectedForm = 0;
+                this.template = GridPanelViewAllContext;
+            this.currentSelectedForm = -1;
+            this.clearFooterAction();
 
             this.render(this.template);
+        },
+
+        hideContextList : function()
+        {
+            if ($("#contextSwitcher .hidden").length == 0)
+            {
+                $("#contextSwitcher span").addClass("hidden");
+                $("#contextSwitcher .selectedContext").removeClass("hidden");
+                $("#contextSwitcher .selectedContext").attr("style", "width:auto;");
+                $("header span.pipe:eq(1)").attr("style", "");
+                $("#contextSwitcher").attr("style", "position:initial;");
+            }
         }
     });
 

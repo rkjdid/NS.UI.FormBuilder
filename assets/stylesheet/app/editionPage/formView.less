@@ -12,8 +12,9 @@
 }
 
 .fieldType {
-    color : #68696b !important;
+    color : #68696b;
     padding-left: 7px;
+    font-size: 20px;
 }
 
 .col11centered { margin-left: 4.15555% !important; }
@@ -38,10 +39,17 @@
         margin-bottom : 50px;
         z-index: 1;
 
+        .saveSpinner {
+            display:none;
+            max-height: 40px;
+            vertical-align: initial;
+            margin: 7px 50px 0 63px;
+        }
+
         footer {
-            height        : 81px;
+            height        : 80px;
             position      : absolute;
-            bottom        : 55px;
+            bottom        : 30px;
             background    : @footerBackgroundColor;
             width         : 100% !important;
 
@@ -53,13 +61,41 @@
                 &.grey:first-child {
                     margin-right: 20px;
                 }
-                margin-top: 22.5px;
+                margin-top: 12px;
                 label:hover {
                     cursor : pointer;
                 }
                 &.red {
                     &:last-child {
                         margin-left: 20px;
+                    }
+                }
+            }
+        }
+
+        .sizepreview-container{
+            margin-top: 20px;
+
+            .sizepreview {
+                margin-left: 10%;
+                cursor: pointer;
+                color: white;
+                font-size: 15px;
+                display:none;
+
+                &:hover {
+                    color:#892833;
+                    text-decoration:underline;
+                }
+
+                &.selected {
+                    color:#892833;
+                    font-size:large;
+                    text-decoration:underline;
+
+                    &:hover {
+                        color:white;
+                        text-decoration:line-through;
                     }
                 }
             }
@@ -103,7 +139,7 @@
 
         //  Main drop section, use perfect scroll bar library
         .scrollSection {
-            height: 90%;
+            height: ~"calc(100% - 150px)";
             overflow: hidden;
             .col-md-12:first-child {
                 height: 100%;
@@ -126,14 +162,14 @@
         //  Class for each field in the drop zone
         .dropField {
             .noMarginTop;
-            padding-top   : 0px;
+            padding   : 0px;
             margin-left   : 0!important;
             background    : #111;
-            margin-bottom : 20px;
+            margin-bottom : 10px;
 
             .element {
                 background : #222;
-                padding: 0 !important;
+                padding: 3px !important;
                 border : 1px solid @dropFieldHeaderColor;
 
                 @hoverColor : #777;
@@ -144,7 +180,7 @@
                         background-color : @hoverColor !important;
                     }
                     .fieldType {
-                        color : #222!important;
+                        color : #222;
                     }
                     &:hover {
                         border-color : @hoverColor !important;
@@ -159,32 +195,33 @@
                     &.paddingBottom5 {
                         .exo;
                         transition       : background 0.2s ease-in-out;
-                        height           : 45px;
-                        line-height      : 45px;
+                        height           : 35px;
+                        line-height      : 35px;
                         color            : white;
                         background-color : @dropFieldHeaderColor;
+                        overflow: hidden;
 
                         .field-icon {
-                            height     : 44px;
-                            margin     : 0 1px 0 1px;
+                            height     : 35px;
+                            margin     : 2px 3px 0 5px;
                             padding    : 0;
                             overflow   : hidden;
                             text-align : center;
-                            line-height: 44px;
-                            font-size  : 29px;
-                            width      : 5.15555%!important;
+                            line-height: 35px;
+                            font-size  : 25px;
                         }
 
                         .field-label {
                             .exo;
-                            height      : 45px;
-                            line-height : 40px;
+                            height      : 35px;
+                            line-height : 35px;
                             color       : white;
-                            padding-left: 0;
+                            display     : inline;
+                            padding-left: 5px;
                             i {
-                                font-size : 25px;
+                                font-size : 20px;
                                 position  : relative;
-                                top       : 4px;
+                                top       : 2px;
                                 color     : #8b8d8f;
                             }
                         }
@@ -195,9 +232,9 @@
                         padding-right: 15px;
                         span {
                             color : #aaa;
-                            font-size : 24px;
-                            line-height: 42px;
-                            padding-left: 20px;
+                            font-size : 20px;
+                            line-height: 35px;
+                            margin-left: 20px;
                             &.edit {
                                 color : white;
                             }
@@ -212,10 +249,14 @@
                     &:not(.paddingBottom5) {
                         //  row with input
                         background : @backgroundColor;
-                        padding-top: 10px;
-                        padding-bottom: 10px;
+                        padding-top: 5px;
+                        padding-bottom: 5px;
                     }
 
+                    .thesaurusField {
+                        max-height: 200px;
+                        overflow: auto;
+                    }
                 }
 
                 &:hover {
@@ -299,6 +340,7 @@
                 textarea {
                     .mainField;
                     resize       : none;
+                    height       : 32px !important;
                 }
                 .span1:last-child {
                     height      : 48px;
@@ -449,6 +491,10 @@
             }
         }
 
+        #formOriginalIdArea{
+            font-size: 16px;
+            margin-top: 15px;
+        }
     }
 
 }

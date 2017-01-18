@@ -1,5 +1,8 @@
 
-define(['jquery', 'underscore', 'backbone', 'backbone.radio', 'i18n'], function($, _, Backbone, Radio) {
+define(['jquery', 'underscore', 'backbone', 'backbone.radio', 'sweetalert', '../../../Translater', 'i18n'],
+    function($, _, Backbone, Radio, swal, Translater) {
+
+    var translater = Translater.getTranslater();
 
     /**
      *  Base view
@@ -37,7 +40,7 @@ define(['jquery', 'underscore', 'backbone', 'backbone.radio', 'i18n'], function(
          * Initialize backbone radio form channel and listen events
          */
         initFormChannel : function() {
-            this.formChannel = Backbone.Radio.channel('form')
+            this.formChannel = Backbone.Radio.channel('form');
 
             //  Disable actions
             //  Send by FormPanelView when user want to edit a field
@@ -63,6 +66,7 @@ define(['jquery', 'underscore', 'backbone', 'backbone.radio', 'i18n'], function(
          */
         destroy_view: function() {
             this.$el.slideUp(_.bind(function() {
+                // TODO undelegate ?
                 this.undelegateEvents();
 
                 this.$el.removeData().unbind();
@@ -77,7 +81,25 @@ define(['jquery', 'underscore', 'backbone', 'backbone.radio', 'i18n'], function(
          * Send event for remove the view
          */
         removeView: function() {
-            this.formChannel.trigger('remove', this.model.get('id'));
+            var self = this;
+            swal({
+                title              : translater.getValueFromKey('modal.clear.title') || "Etes vous sûr ?",
+                text               : translater.getValueFromKey('modal.clear.textinput') || "Le champ sera définitivement perdu !",
+                type               : "warning",
+                showCancelButton   : true,
+                confirmButtonColor : "#DD6B55",
+                confirmButtonText  : translater.getValueFromKey('modal.clear.yes') || "Oui, supprimer",
+                cancelButtonText   : translater.getValueFromKey('modal.clear.no') || "Annuler",
+                closeOnConfirm     : true,
+                closeOnCancel      : true
+            }, function(isConfirm) {
+                if (isConfirm) {
+                    self.formChannel.trigger('remove', self.model.get('id'));
+                }
+
+                window.onkeydown = null;
+                window.onfocus = null;
+            });
         },
 
         /**
@@ -105,7 +127,7 @@ define(['jquery', 'underscore', 'backbone', 'backbone.radio', 'i18n'], function(
          * Send an event on form channel when user wants to edit field properties
          */
         editModel : function() {
-            this.disableActions();
+            $(".actions").hide();
 
             //  The event is send to EditionPageController
             this.formChannel.trigger('editModel', this.model.get('id'));
@@ -116,7 +138,7 @@ define(['jquery', 'underscore', 'backbone', 'backbone.radio', 'i18n'], function(
          * Re-enable actions when the edition is done or cancelled
          */
         enableActions : function() {
-            this.$el.find('.actions').removeClass('locked');
+            // REMOVED FOR NOW this.$el.find('.actions').removeClass('locked');
             this.$el.find('.element').removeClass('selected');
         },
 
@@ -124,7 +146,7 @@ define(['jquery', 'underscore', 'backbone', 'backbone.radio', 'i18n'], function(
          * Disable action when edition panel is displayed (form or field)
          */
         disableActions : function() {
-            this.$el.find('.actions').addClass('locked');
+            // REMOVED FOR NOW this.$el.find('.actions').addClass('locked');
         },
 
         /**

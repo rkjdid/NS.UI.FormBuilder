@@ -44,9 +44,12 @@ define([
          * Get all pre configurated field
          */
         getPreConfiguratedFields : function () {
+
+            /*
             $.getJSON(this.URLOptions.preConfiguredField, _.bind(function(fieldList) {
                 this.preConfiguredFieldList = fieldList;
             }, this))
+            */
         },
 
         /**
@@ -114,6 +117,8 @@ define([
          * Main controller action, display edition page layout
          */
         editionAction: function(options) {
+            delete this.currentEditionPageLayout;
+
             // TODO Display Context
             $('#navbarContext').text($.t('navbar.context.edition') + (window.context?' - '+window.context:''));
 
@@ -123,6 +128,8 @@ define([
             });
 
             this.editionPageRegion.show( editionPageLayout );
+
+            this.currentEditionPageLayout = editionPageLayout;
         },
 
         /**
@@ -139,18 +146,14 @@ define([
          *
          * @param {string} newElementClassName new field class like TextField
          */
-        addNewElementToCollection : function(newElementClassName) {
-            this.fieldCollection.addNewElement(newElementClassName);
+        addNewElementToCollection : function(newElementClassName, attributes) {
+            this.lastNewElementAdded = this.fieldCollection.addNewElement(newElementClassName, attributes, false);
         },
 
-
-        /**
-        * This function is run when user wants to configure a field
-        * Trigger an event with field ID to the formbuilder object (see formbuilder.js)
-        *
-        * @param  {integer} ID of the field to edit
-        */
         modelSetting: function(modelID) {
+
+            if (modelID == false)
+                modelID = this.lastNewElementAdded;
 
             //  Get many information with Ajax and send it to the layout
             //  And the layout display the setting panel
@@ -210,7 +213,18 @@ define([
                 return(toret);
             };
 
+            var setUnexistingStuff = function(mymodel){
+                var compulsoryProps = ['editorClass', 'fieldClassEdit', 'fieldClassDisplay'];
+
+                $.each(compulsoryProps, function(index, value){
+                    if (!mymodel[value])
+                        mymodel[value] =  '';
+                });
+            };
+
             fieldToSave.field.editMode = getBinaryWeight(fieldToSave.field.editMode);
+
+            setUnexistingStuff(fieldToSave.field);
 
             $.ajax({
                 type: "POST",

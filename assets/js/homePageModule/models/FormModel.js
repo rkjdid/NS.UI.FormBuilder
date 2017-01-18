@@ -14,21 +14,22 @@ define([
          */
         defaults: {
             name             : translater.getValueFromKey('form.new'),
-            labelFr          : 'Formulaire',
-            labelEn          : 'Form',
+            labelFr          : '',
+            labelEn          : '',
             creationDate     : new Date(),
             modificationDate : null,
             curStatus        : 1,
-            descriptionEn    : 'A form',
-            descriptionFr    : 'Un formulaire',
-            keywordsFr       : ['formulaire'],
-            keywordsEn       : ['form'],
+            descriptionFr    : '',
+            descriptionEn    : '',
+            keywordsFr       : [],
+            keywordsEn       : [],
             schema           : {},
             fieldsets        : [],
             tag              : '',
             obsolete         : false,
+            propagate        : false,
             isTemplate       : false,
-            context          : window.context || AppConfig.appMode.currentmode,
+            context          : window.context || "",
 
             // display attributes
             creationDateDisplay : "",
@@ -106,6 +107,7 @@ define([
                 tag                        : this.get('tag'),
                 isTemplate                 : this.get('isTemplate'),
                 obsolete                   : this.get('obsolete'),
+                propagate                  : this.get('propagate'),
                 context                    : this.get('context')
             }
         }

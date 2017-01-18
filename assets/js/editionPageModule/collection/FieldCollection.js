@@ -17,8 +17,9 @@ define([
     '../editor/CheckboxEditor',
     'pillbox-editor',
     'app-config',
-    './CollectionExtention'
-], function ($, Backbone, Fields, Radio, Translater, CheckboxEditor, PillboxEditor, AppConfig, CollectionExtention) {
+    './CollectionExtention',
+    './staticInputs/ContextStaticInputs'
+], function ($, Backbone, Fields, Radio, Translater, CheckboxEditor, PillboxEditor, AppConfig, CollectionExtention, ContextStaticInputs) {
 
     var fieldTemplate = _.template('\
         <div class="form-group field-<%= key %>">\
@@ -32,6 +33,9 @@ define([
 
     var translater = Translater.getTranslater();
     var extention = CollectionExtention;
+    var staticInputs = ContextStaticInputs;
+
+    var globalloop = 0;
 
     /**
     * Implement form object as a fields collection
@@ -53,13 +57,18 @@ define([
                 validators  : [{
                     type : 'required',
                     message : translater.getValueFromKey('form.validation')
-                }]
-            },
-            tag : {
-                type        : "Text",
-                title       : translater.getValueFromKey('form.tag') + ' <i>(' + translater.getValueFromKey('optional') + ')</i>',
-                editorClass : 'form-control',
-                template    : fieldTemplate
+                },
+                function test(value) {
+                    if (value.length > 50) {
+                        return {
+                            type: 'String too wide',
+                            message: translater.getValueFromKey('schema.maxlength50')
+                        };
+                    }
+                }],
+                editorAttrs : {
+                    placeholder : translater.getValueFromKey('placeholder.form.name')
+                }
             },
             labelFr   : {
                 type        : "Text",
@@ -69,7 +78,18 @@ define([
                 validators  : [{
                     type : 'required',
                     message : translater.getValueFromKey('form.validation')
-                }]
+                },
+                function test(value) {
+                    if (value.length > 50) {
+                        return {
+                            type: 'String too wide',
+                            message: translater.getValueFromKey('schema.maxlength50')
+                        };
+                    }
+                }],
+                editorAttrs : {
+                    placeholder : translater.getValueFromKey('placeholder.form.label.fr')
+                }
             },
             labelEn   : {
                 type        : "Text",
@@ -79,17 +99,18 @@ define([
                 validators  : [{
                     type : 'required',
                     message : translater.getValueFromKey('form.validation')
-                }]
-            },
-            descriptionEn : {
-                type        : "TextArea",
-                title       : translater.getValueFromKey('form.description.en'),
-                editorClass : 'form-control',
-                template    : fieldTemplate,
-                validators  : [{
-                    type : 'required',
-                    message : translater.getValueFromKey('form.validation')
-                }]
+                },
+                function test(value) {
+                    if (value.length > 50) {
+                        return {
+                            type: 'String too wide',
+                            message: translater.getValueFromKey('schema.maxlength50')
+                        };
+                    }
+                }],
+                editorAttrs : {
+                    placeholder : translater.getValueFromKey('placeholder.form.label.en')
+                }
             },
             descriptionFr : {
                 type        : "TextArea",
@@ -99,11 +120,46 @@ define([
                 validators  : [{
                     type : 'required',
                     message : translater.getValueFromKey('form.validation')
-                }]
+                },
+                function test(value) {
+                    if (value.length > 255) {
+                        return {
+                            type: 'String too wide',
+                            message: translater.getValueFromKey('schema.maxlength255')
+                        };
+                    }
+                }],
+                editorAttrs : {
+                    placeholder : translater.getValueFromKey('placeholder.form.description.fr')
+                }
+            },
+            descriptionEn : {
+                type        : "TextArea",
+                title       : translater.getValueFromKey('form.description.en'),
+                editorClass : 'form-control',
+                template    : fieldTemplate,
+                validators  : [{
+                    type : 'required',
+                    message : translater.getValueFromKey('form.validation')
+                },
+                function test(value) {
+                    if (value.length > 255) {
+                        return {
+                            type: 'String too wide',
+                            message: translater.getValueFromKey('schema.maxlength255')
+                        };
+                    }
+                }],
+                editorAttrs : {
+                    placeholder : translater.getValueFromKey('placeholder.form.description.en')
+                }
             },
             keywordsFr : {
                 type        : PillboxEditor,
-                title       : translater.getValueFromKey('form.keywords.fr')
+                title       : translater.getValueFromKey('form.keywords.fr'),
+                editorAttrs : {
+                    placeholder : "testage"
+                }
             },
             keywordsEn : {
                 type        : PillboxEditor,
@@ -113,6 +169,11 @@ define([
                 type        : CheckboxEditor,
                 fieldClass  : "checkBoxEditor",
                 title       : translater.getValueFromKey('schema.obsolete')
+            },
+            propagate : {
+                type        : CheckboxEditor,
+                fieldClass  : "checkBoxEditor",
+                title       : translater.getValueFromKey('schema.propagate')
             },
             context : {
                 type        : "Hidden",
@@ -131,13 +192,18 @@ define([
                     validators  : [{
                         type : 'required',
                         message : translater.getValueFromKey('form.validation')
-                    }]
-                },
-                tag : {
-                    type        : "Text",
-                    title       : translater.getValueFromKey('form.tag') + ' <i>(' + translater.getValueFromKey('optional') + ')</i>',
-                    editorClass : 'form-control',
-                    template    : fieldTemplate
+                    },
+                        function test(value) {
+                            if (value.length > 55) {
+                                return {
+                                    type: 'String too wide',
+                                    message: translater.getValueFromKey('schema.maxlength55')
+                                };
+                            }
+                        }],
+                    editorAttrs : {
+                        placeholder : translater.getValueFromKey('placeholder.form.name')
+                    }
                 },
                 labelFr   : {
                     type        : "Text",
@@ -147,7 +213,18 @@ define([
                     validators  : [{
                         type : 'required',
                         message : translater.getValueFromKey('form.validation')
-                    }]
+                    },
+                        function test(value) {
+                            if (value.length > 55) {
+                                return {
+                                    type: 'String too wide',
+                                    message: translater.getValueFromKey('schema.maxlength55')
+                                };
+                            }
+                        }],
+                    editorAttrs : {
+                        placeholder : translater.getValueFromKey('placeholder.form.label.fr')
+                    }
                 },
                 labelEn   : {
                     type        : "Text",
@@ -157,17 +234,18 @@ define([
                     validators  : [{
                         type : 'required',
                         message : translater.getValueFromKey('form.validation')
-                    }]
-                },
-                descriptionEn : {
-                    type        : "TextArea",
-                    title       : translater.getValueFromKey('form.description.en'),
-                    editorClass : 'form-control',
-                    template    : fieldTemplate,
-                    validators  : [{
-                        type : 'required',
-                        message : translater.getValueFromKey('form.validation')
-                    }]
+                    },
+                        function test(value) {
+                            if (value.length > 55) {
+                                return {
+                                    type: 'String too wide',
+                                    message: translater.getValueFromKey('schema.maxlength55')
+                                };
+                            }
+                        }],
+                    editorAttrs : {
+                        placeholder : translater.getValueFromKey('placeholder.form.label.en')
+                    }
                 },
                 descriptionFr : {
                     type        : "TextArea",
@@ -177,7 +255,39 @@ define([
                     validators  : [{
                         type : 'required',
                         message : translater.getValueFromKey('form.validation')
-                    }]
+                    },
+                        function test(value) {
+                            if (value.length > 255) {
+                                return {
+                                    type: 'String too wide',
+                                    message: translater.getValueFromKey('schema.maxlength255')
+                                };
+                            }
+                        }],
+                    editorAttrs : {
+                        placeholder : translater.getValueFromKey('placeholder.form.description.fr')
+                    }
+                },
+                descriptionEn : {
+                    type        : "TextArea",
+                    title       : translater.getValueFromKey('form.description.en'),
+                    editorClass : 'form-control',
+                    template    : fieldTemplate,
+                    validators  : [{
+                        type : 'required',
+                        message : translater.getValueFromKey('form.validation')
+                    },
+                        function test(value) {
+                            if (value.length > 255) {
+                                return {
+                                    type: 'String too wide',
+                                    message: translater.getValueFromKey('schema.maxlength255')
+                                };
+                            }
+                        }],
+                    editorAttrs : {
+                        placeholder : translater.getValueFromKey('placeholder.form.description.en')
+                    }
                 },
                 keywordsFr : {
                     type        : PillboxEditor,
@@ -191,6 +301,11 @@ define([
                     type        : CheckboxEditor,
                     fieldClass  : "checkBoxEditor",
                     title       : translater.getValueFromKey('schema.obsolete')
+                },
+                propagate : {
+                    type        : CheckboxEditor,
+                    fieldClass  : "checkBoxEditor",
+                    title       : translater.getValueFromKey('schema.propagate')
                 },
                 context : {
                     type        : "Hidden",
@@ -214,7 +329,10 @@ define([
             var that = this;
 
             if (options.context && options.context != "all")
+            {
                 setExtention(options.context);
+                setStatics(options.context);
+            }
 
             that.options = options;
 
@@ -239,8 +357,12 @@ define([
             this.labelEn         = opt.labelEn        || "";
             this.tag             = opt.tag            || "";
             this.obsolete        = opt.obsolete       || false;
-            this.context         = opt.context        || AppConfig.appMode.currentmode;
+            this.propagate       = opt.propagate      || false;
+            this.context         = opt.context        || "";
             this.isTemplate      = opt.isTemplate     || false;
+            this.fileList        = opt.fileList       || [];
+            this.originalID      = opt.originalID     || 0;
+
             this.fieldstodelete  = [];
             this.fieldsexcludedfromdelete = [];
             this.totalAddedElements = 0;
@@ -254,11 +376,18 @@ define([
                 that[index] = opt[index] || value || "";
             });
 
+            $.each(extention.rulesList(), function(index, value){
+                that.schemaDefinition[index].validators.push(value);
+            });
+
             //  Bind
             _.bindAll(this, 'clearAll', 'getSize', 'addElement', 'addNewElement', 'getJSON', 'getJSONFromModel', 'removeElement');
 
             this.initFormChannel();
             this.initHookChannel();
+            this.initMainChannel();
+
+            this.formChannel = Backbone.Radio.channel('form');
         },
 
         /**
@@ -290,6 +419,10 @@ define([
 
         initHookChannel : function() {
             this.hookChannel = Backbone.Radio.channel('hook');
+        },
+
+        initMainChannel : function () {
+            this.mainChannel = Backbone.Radio.channel('edition');
         },
 
         fieldChange : function(id) {
@@ -330,6 +463,12 @@ define([
         * Clear form collection
         */
         clearAll: function () {
+            /* TODO Ugly, must find a better way */
+            var that = this;
+            $.each($(".dropField"), function(index, value){
+                that.fieldstodelete.push($(value).attr("id").replace("dropField", ""));
+            });
+            $(".dropField").remove();
             this.reset();
         },
 
@@ -377,7 +516,7 @@ define([
          *
          * @return {object} serialized collection data
          */
-        getJSON: function () {
+        getJSON: function (PostOrPut) {
             var getBinaryWeight = function(editModeVal) {
                 var toret = editModeVal;
                 if (!$.isNumeric(editModeVal))
@@ -393,6 +532,15 @@ define([
                 return(toret);
             };
 
+            var setUnexistingStuff = function(mymodel){
+                var compulsoryProps = ['editorClass', 'fieldClassEdit', 'fieldClassDisplay'];
+
+                $.each(compulsoryProps, function(index, value){
+                    if (!mymodel[value])
+                        mymodel[value] =  '';
+                });
+            };
+
             var json         = {
                 //  form properties
                 name          : this.name,
@@ -404,8 +552,11 @@ define([
                 labelEn       : this.labelEn,
                 tag           : this.tag || "",
                 obsolete      : this.obsolete,
+                propagate     : this.propagate,
                 isTemplate    : this.isTemplate || false,
                 context       : this.context,
+                fileList      : this.fileList || [],
+                originalID    : this.originalID || 0,
                 //  form inputs
                 schema        : {},
                 fieldsets     : []
@@ -416,6 +567,14 @@ define([
             $.each(extention.jsonExtention(that), function(index, value){
                 json[index] = that[index];
             });
+
+            console.log("json.propagate", json.propagate);
+
+            if (PostOrPut == "POST")
+            {
+                json.schema = staticInputs.getStaticInputs(this);
+                json = staticInputs.applyRules(this, json);
+            }
 
             this.map(_.bind(function (model) {
                 if (model.constructor.type === 'Subform') {
@@ -435,10 +594,12 @@ define([
 
                         json.schema["childform" + ((Object.keys(json.schema).length + 1) || "1")] = subModel;
                     }
+
                 }
             }, this));
 
             $.each(json.schema, function(index, inputVal){
+
                 $.each(json.fieldsets, function(index, fieldsetVal){
                     if (inputVal.linkedFieldset != fieldsetVal.legend + " " + fieldsetVal.cid &&
                         $.inArray(inputVal.name, fieldsetVal.fields) != -1){
@@ -447,13 +608,42 @@ define([
                         });
                     }
                 });
+
+                inputVal.editMode = getBinaryWeight(inputVal.editMode);
+                //inputVal.name = inputVal.name.replace(/\s+/g, '');
+
+                setUnexistingStuff(inputVal);
             });
 
-            $.each(json.schema, function(index, val){
-                val.editMode = getBinaryWeight(val.editMode);
-                val.name = val.name.replace(/\s+/g, '');
+            $.each(json, function(index, value){
+                try{
+                    json[index] = json[index].trim();
+                }
+                catch(e){
+
+                }
             });
 
+            $.each(json.schema, function(topindex, topvalue){
+                $.each(topvalue, function(index, value){
+                    try{
+                        json.schema[topindex][index] = json.schema[topindex][index].trim();
+                    }
+                    catch(e){
+
+                    }
+                });
+            });
+
+            json.actif = "nique ta mere!";
+            if (json.actif)
+            {
+                json.actif = true;
+                if (json.obsolete)
+                    json.actif = false;
+            }
+
+            console.log("json to return", json);
             return json;
         },
 
@@ -462,6 +652,7 @@ define([
          *
          * @param field                 field to add
          * @param ifFieldIsInFieldset   if field in under a fieldset
+         * @param newElement            if field is a new element
          */
         addField : function(field, ifFieldIsInFieldset, newElement) {
             this.totalAddedElements++;
@@ -474,7 +665,7 @@ define([
                     field.set('id', this.totalAddedElements);
                 }
                 if (field.get('name') == Fields.BaseField.prototype.defaults.name)
-                    field.set('name', field.get('name') + field.get('id'));
+                    field.set('name', field.get('name'));
 
                 this.add(field);
 
@@ -491,14 +682,20 @@ define([
                     var scrollArea = $(".dropArea .slimScrollDiv #scrollSection");
                     var lastItemofScrollArea = scrollArea.find('div.dropField:last');
 
+                    var scrollTo = lastItemofScrollArea.offset().top + lastItemofScrollArea.outerHeight(true) + scrollArea.scrollTop();
+
+                    console.log("scrollTo", scrollTo);
+                    console.log(lastItemofScrollArea.offset().top, "+", lastItemofScrollArea.outerHeight(true), "+", scrollArea.scrollTop());
+
                     if (lastItemofScrollArea.offset()){
                         scrollArea.animate({
-                            scrollTop: lastItemofScrollArea.offset().top + lastItemofScrollArea.outerHeight(true) + scrollArea.scrollTop()
+                            scrollTop: scrollTo
                         }, 500);
                     }
                     this.fieldsexcludedfromdelete.push(field.get('id'));
                 }
 
+                this.nextFieldNew();
                 return field.get('id');
             }
         },
@@ -512,16 +709,7 @@ define([
          */
         addElement: function (nameType, properties, isUnderFieldset) {
             var field = properties || {};
-
-            //  We check if the field name is the default name or not (if a form was imported the name can be different but can't be modified)
-            field['name'] = field['name'] == 'Field' ? 'Field' + this.getSize() : field['name'];
             field['order'] = this.getSize();
-
-            //
-            //  We add a new file is un the collection
-            //  addField return new added field id
-            //  addElement return so this id
-            //
 
             return this.addField(new Fields[nameType](field), isUnderFieldset);
         },
@@ -535,7 +723,6 @@ define([
          */
         addNewElement: function (nameType, properties, isUnderFieldset) {
             var field = properties || {};
-            field['name']  = field['name'] == 'Field' ? 'Field' + this.getSize() : field['name'];
             field['order'] = this.getSize();
 
             return this.addField(new Fields[nameType](field), isUnderFieldset, true);
@@ -559,7 +746,7 @@ define([
          *
          * @param  {integer} id model to remove id
          */
-        removeElement : function(id) {
+        removeElement : function(id, avoidSettingsClosure) {
             var item = this.get(id);
 
             if (item !== undefined) {
@@ -582,6 +769,9 @@ define([
                 {
                     this.fieldstodelete.push(item.get('id'));
                 }
+
+                if (!avoidSettingsClosure)
+                    this.formChannel.trigger('cancelFieldEdition', null, true, item.get('id'));
             }
         },
 
@@ -640,9 +830,16 @@ define([
                 this.tag                  = JSONUpdate["tag"];
 
                 this.obsolete             = JSONUpdate["obsolete"];
+                this.propagate            = JSONUpdate["propagate"];
+
                 this.isTemplate           = JSONUpdate["isTemplate"];
 
+                this.fileList             = JSONUpdate["fileList"];
+
+                this.originalID           = JSONUpdate["originalID"];
+
                 var that = this;
+
                 $.each(extention.jsonExtention(), function(index, value){
                     that[index] = JSONUpdate[index] || value || "";
                 });
@@ -690,6 +887,7 @@ define([
         },
 
         triggeredCreateFieldsets2 : function() {
+
             var i = 0;
             var that = this;
 
@@ -734,12 +932,13 @@ define([
                         else
                         {
                             that.JSONUpdate['fieldsets'][0]["order"] += 10000;
-                            that.createFieldset2(that.JSONUpdate['fieldsets'][0]);
+                            alert("fieldsets workaround has been removed long time ago !!");
+                            //that.createFieldset2(that.JSONUpdate['fieldsets'][0]);
                         }
                     }
                     else
                     {
-                        that.createField3(that.JSONUpdate["schema"][first]);
+                        this.schema.push(that.JSONUpdate["schema"][first]);
                         delete that.JSONUpdate["schema"][first];
                     }
                     i++;
@@ -748,8 +947,9 @@ define([
                         break;
                 }
 
-                this.formChannel.trigger('collectionUpdateFinished');
-                that.working = false;
+                globalloop = 0;
+
+                this.nextFieldNew();
             }
         },
 
@@ -893,6 +1093,31 @@ define([
         /**
          * Add the next field on the collection
          */
+        nextFieldNew : function() {
+            var that = this;
+
+            setTimeout(function() {
+                if (globalloop > 100)
+                    return;
+                if (that.schema != undefined && that.schema.length > 0) {
+
+                    var firstFieldToAdd = that.schema[0];
+
+                    that.schema.shift();
+
+                    that.createField3(firstFieldToAdd);
+
+                }
+                else {
+                    that.formChannel.trigger('collectionUpdateFinished');
+                    that.working = false;
+                }
+            }, 35);
+        },
+
+        /**
+         * Add the next field on the collection
+         */
         nextField : function() {
             if (this.schema != undefined && this.schema.length > 0) {
 
@@ -911,10 +1136,12 @@ define([
 
         /**
          * Return collection attributes values
-         * @return {[Object} attributes values
+         * @return [Object} attributes values
          */
         getAttributesValues : function() {
-            return _.pick(this, _.keys(this.schemaDefinition));
+            var result = _.pick(this, _.keys(this.schemaDefinition));
+
+            return result;
         },
 
         /**
@@ -929,7 +1156,7 @@ define([
                 if (el.constructor.type != undefined && el.get('id') != modelID) {
                     fieldsList.push(el.get('name'))
                 }
-            })
+            });
 
             return fieldsList;
         },
@@ -938,108 +1165,197 @@ define([
          * Save collection, send POST or PUT request to the back
          */
         save : function() {
+
             var that = this;
+            var callbackSuccess = function(){
+                // TODO TODO
+                // console.log(that.saveChange());
 
-            if (!this.formChannel)
-                this.initFormChannel();
+                that.showSpinner();
 
-            var tmpForm =  new Backbone.Form({
-                schema: this.getDefaultSchema(),
-                data  : this.getAttributesValues()
-            }).render();
+                var hasDuplicates = function(array) {
+                    return (new Set(array)).size !== array.length;
+                };
 
-            var formValidation = tmpForm.validate();
-
-            var fieldsValidation = true;
-
-            $.each(that.models, function(index, value){
-                var fieldModel = that.get(value.id);
-
-                if (fieldsValidation && !fieldModel.attributes.validated)
+                setTimeout(function()
                 {
-                    var fieldForm = new Backbone.Form({
-                        model: that.get(value.id)
+                    if (!that.formChannel)
+                        that.initFormChannel();
+
+                    var tmpForm = new Backbone.Form({
+                        schema: that.getDefaultSchema(),
+                        data: that.getAttributesValues()
                     }).render();
-                    if (fieldForm.validate() != null)
-                    {
-                        fieldsValidation = false;
-                    }
-                }
-            });
 
-            if (formValidation === null && fieldsValidation)
-            {
-                $.each(that.models, function(index, value){
-                    delete that.get(value.id).attributes.validated;
-                });
+                    var formValidation = tmpForm.validate();
 
-                var PostOrPut = this.id > 0 ? 'PUT' : 'POST';
-                var url = this.id > 0 ? (this.url + '/' + this.id) : this.url;
+                    var fieldsValidation = true;
 
-                $.ajax({
-                    data        : JSON.stringify(this.getJSON()),
-                    type        : PostOrPut,
-                    url         : url,
-                    contentType : 'application/json',
-                    //  If you run the server and the back separately but on the same server you need to use crossDomain option
-                    //  The server is already configured to used it
-                    crossDomain : true,
+                    var formValues = [];
+                    var formNames = [];
 
-                    //  Trigger event with ajax result on the formView
-                    success: _.bind(function(data) {
-                        this.id = data.form.id;
-                        var savedid = this.id;
-                        if (data.form.schema) {
-                            $.each(data.form.schema, function (index, inputVal) {
-                                $.each(that.models, function (modelindex, modelinputVal) {
-                                    if (modelinputVal.attributes.name == index) {
-                                        that.models[modelindex].set('id', inputVal.id);
-                                    }
-                                });
+                    $.each(that.models, function (index, value) {
+                        var fieldModel = that.get(value.id);
+
+                        if (!fieldModel.attributes.validated) {
+                            var fieldForm = new Backbone.Form({
+                                model: that.get(value.id)
+                            }).render();
+
+                            if (!fieldForm.staticfield)
+                            {
+                                var fieldformresult = fieldForm.validate();
+                                if (fieldformresult != null &&
+                                    $.inArray(fieldModel.attributes.name, staticInputs.getCompulsoryInputs()) == -1)
+                                {
+                                    fieldsValidation = false;
+                                    $("#dropField"+value.id+" .field-label span").css("color", "red");
+                                }
+                            }
+
+                            formValues.push({
+                                id:fieldForm.model.attributes.id,
+                                name:fieldForm.model.attributes.name
                             });
+                            formNames.push(fieldForm.model.attributes.name);
                         }
+                    });
 
-                        var savedFieldsToDelete = this.fieldstodelete;
-                        this.fieldstodelete = [];
+                    var fieldNamesHasDuplicates = hasDuplicates(formNames);
 
-                        $.each(savedFieldsToDelete, function(index, inputVal) {
-                            $.ajax({
-                                data: {},
-                                type: 'DELETE',
-                                url: that.url + "/" + savedid + "/field/" + inputVal,
-                                contentType: 'application/json',
-                                crossDomain: true,
-                                success: _.bind(function (data) {
-                                }, this),
-                                error: _.bind(function (xhr, ajaxOptions, thrownError) {
-                                    that.fieldstodelete.push(inputVal);
-                                    that.formChannel.trigger('save:fail');
-                                }, this)
-                            });
+                    if (formValidation === null && fieldsValidation && !fieldNamesHasDuplicates) {
+                        $.each(that.models, function (index, value) {
+                            delete that.get(value.id).attributes.validated;
                         });
 
-                        this.fieldsexcludedfromdelete = [];
+                        var PostOrPut = that.id > 0 ? 'PUT' : 'POST';
+                        var url = that.id > 0 ? (that.url + '/' + that.id) : that.url;
+                        var dataToSend = JSON.stringify(that.getJSON(PostOrPut));
 
-                        setTimeout(function(){
-                            if (that.fieldstodelete.length == 0){
-                                that.formChannel.trigger('save:success');
-                            }
-                        }, 1500);
-                    }, this),
-                    error: _.bind(function(xhr, ajaxOptions, thrownError) {
-                        that.formChannel.trigger('save:fail');
-                    }, this)
-                });
-            }
-            else
-            {
-                if (formValidation != null)
-                    this.formChannel.trigger('save:formIncomplete');
-                else if (!fieldsValidation)
-                    this.formChannel.trigger('save:fieldIncomplete');
-            }
+                        $.ajax({
+                            data: dataToSend,
+                            type: PostOrPut,
+                            url: url,
+                            contentType: 'application/json',
+                            //  If you run the server and the back separately but on the same server you need to use crossDomain option
+                            //  The server is already configured to used it
+                            crossDomain: true,
 
+                            //  Trigger event with ajax result on the formView
+                            success: _.bind(function (data) {
+                                that.id = data.form.id;
+                                var savedid = that.id;
+                                if (data.form.schema) {
+                                    $.each(data.form.schema, function (index, inputVal) {
+                                        $.each(that.models, function (modelindex, modelinputVal) {
+                                            console.log(modelinputVal.attributes.name + " == " + inputVal.name);
+                                            if (modelinputVal.attributes.name == inputVal.name) {
+                                                that.models[modelindex].set('id', inputVal.id);
+                                            }
+                                        });
+                                    });
+                                }
 
+                                $.ajax({
+                                    data: JSON.stringify({fieldstodelete:that.fieldstodelete}),
+                                    type: 'DELETE',
+                                    url: that.url + "/" + savedid + "/deletefields",
+                                    contentType: 'application/json',
+                                    crossDomain: true,
+                                    success: _.bind(function (data) {
+                                    }, that),
+                                    error: _.bind(function (xhr, ajaxOptions, thrownError) {
+                                        that.formChannel.trigger('save:fail');
+                                    }, that)
+                                });
+
+                                that.fieldstodelete = [];
+                                that.fieldsexcludedfromdelete = [];
+
+                                var displaySaveSuccess = function(){
+                                    setTimeout(function () {
+                                        if (that.fieldstodelete.length == 0) {
+                                            that.formChannel.trigger('save:success');
+                                            that.showSpinner(true);
+                                        }
+                                        else
+                                            displaySaveSuccess();
+                                    }, 200);
+                                };
+
+                                displaySaveSuccess();
+                            }, that),
+                            error: _.bind(function (xhr, ajaxOptions, thrownError) {
+                                if (xhr.status == 418)
+                                {
+                                    if (xhr.responseText.indexOf("ERR:NAME") !== -1)
+                                    {
+                                        that.formChannel.trigger('save:fail', "modal.save.formSimilarName");
+                                    }
+                                    else if (xhr.responseText.indexOf("ERR:FRNAME") !== -1)
+                                    {
+                                        that.formChannel.trigger('save:fail', "modal.save.formSimilarFrName");
+                                    }
+                                    else if (xhr.responseText.indexOf("ERR:ENNAME") !== -1)
+                                    {
+                                        that.formChannel.trigger('save:fail', "modal.save.formSimilarEnName");
+                                    }
+                                    else
+                                    {
+                                        that.formChannel.trigger('save:fail', "modal.save.418");
+                                    }
+                                    $("#collectionName").css('color', "red");
+                                }
+                                else if (xhr.status == 508)
+                                {
+                                    that.formChannel.trigger('save:fail', "modal.save.circularDependency");
+                                }
+                                else
+                                {
+                                    if (xhr.responseText.indexOf("customerror") > -1)
+                                        that.formChannel.trigger('save:fail', xhr.responseText.split("::")[1], xhr.responseText.split("::")[2]);
+                                    else
+                                        that.formChannel.trigger('save:fail');
+                                }
+                                that.showSpinner(true);
+                            }, that)
+                        });
+                    }
+                    else {
+                        if (formValidation != null)
+                        {
+                            that.formChannel.trigger('save:formIncomplete');
+                            $("#collectionName").css('color', "red");
+                        }
+                        else if (!fieldsValidation)
+                        {
+                            that.formChannel.trigger('save:fieldIncomplete');
+                        }
+                        else if (fieldNamesHasDuplicates)
+                        {
+                            that.formChannel.trigger('save:hasDuplicateFieldNames');
+                            var savedNames = [];
+                            $.each(formValues, function(index, value){
+                                if (savedNames.indexOf(value.name) > -1){
+                                    $.each(formValues, function(subindex, subvalue){
+                                        if (subvalue.name == value.name)
+                                        {
+                                            $("#dropField"+subvalue.id+" .field-label span").css("color", "red");
+                                        }
+                                    });
+                                }
+                                else
+                                {
+                                    savedNames.push(value.name);
+                                }
+                            });
+                        }
+                        that.showSpinner(true);
+                    }
+                }, 20);
+            };
+
+            this.mainChannel.trigger('manualSaveChange', callbackSuccess);
         },
 
         saveAsTemplate : function() {
@@ -1062,12 +1378,31 @@ define([
                 }, this)
             });
         },
+
+        showSpinner : function(hide) {
+            if (hide)
+            {
+                $(".saveSpinner").hide();
+                $("#save").show();
+            }
+            else
+            {
+                $(".saveSpinner").show();
+                $("#save").hide();
+            }
+        }
     });
 
     var setExtention = function(extentionToSet){
         var context = extentionToSet || window.context || $("#contextSwitcher .selectedContext").text();
         if (context.toLowerCase() != "all")
             extention = CollectionExtention.getModeExtention(context);
+    };
+
+    var setStatics = function(staticsToSet){
+        var context = staticsToSet ||  window.context || $("#contextSwitcher .selectedContext").text();
+        if (context.toLowerCase() != "all")
+            staticInputs = ContextStaticInputs.getStaticMode(context);
     };
 
     return Form;

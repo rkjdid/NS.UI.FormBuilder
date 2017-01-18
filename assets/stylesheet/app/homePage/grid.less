@@ -61,14 +61,14 @@
 
                         &:first-child {
                             @media screen and (min-width: 1200px) {
-                                width : 60%;
+                                width : 50%;
                             }
-                            padding-left: 20px;
+                            // padding-left: 20px;
                         }
 
                         a {
                             color : #8c8f90 !important;
-                            font-size : 16px;
+                            font-size : 14px;
 
                             &:hover {
                                 text-decoration: none !important;
@@ -120,8 +120,9 @@
                         text-overflow:ellipsis;
 
                         &:first-child {
-                            padding-left   : 20px;
+                            // padding-left: 20px;
                             text-transform : uppercase;
+                            width:50%;
                         }
                     }
 
@@ -152,9 +153,11 @@
     }
 
     #grid {
+        font-size : 13px;
         table {
             thead {
                 visibility: hidden;
+                display: none;
                 tr{
                     th {
                         height: 0px !important;
@@ -181,7 +184,6 @@
             height: 100%;
             width: 50%;
 
-
             &:first-child {
                 margin-left: 0 !important;
                 float: left;
@@ -204,7 +206,7 @@
         }
 
         button {
-            margin-top: 24px;
+            margin-top: 12px;
             &.red {
                 &:last-child {
                     margin-left: 17px;
@@ -214,11 +216,11 @@
     }
 
     .scrollSection {
-        height: 80%;
+        height: ~'calc(100% - 233px)';
+        overflow: hidden;
         &.resized {
             height: 4%;
         }
-        overflow: hidden;
         .col-md-12:first-child {
             height: 100%;
         }
@@ -239,6 +241,9 @@
         height: auto;
         #grid2 {
             table {
+                thead {
+                    //visibility: hidden;
+                }
                 tbody {
                     display : none;
                 }
