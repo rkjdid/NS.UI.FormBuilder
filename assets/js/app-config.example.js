@@ -44,6 +44,7 @@ define([
         ],
 
         config : {
+
             startID : {
 				// Thesaurus startID
 				thesaurus :{
@@ -104,6 +105,7 @@ define([
 				//  Wich parent HTML element for the application
 				el 						: '#formBuilder'
 			}
+
         },
 
 		/* DEPRECATED

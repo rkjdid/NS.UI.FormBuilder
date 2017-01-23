@@ -45,6 +45,7 @@ define([
         displayTreeView : function(startID) {
             var that = this;
             if (startID == "")
+
             {
                 startID = AppConfig.config.startID.thesaurus[window.context];
                 if (!startID)
@@ -77,6 +78,7 @@ define([
                     }, this)
                 });
             };
+
 
             require(['jquery-ui', 'fancytree'], _.bind(function() {
                 if (that.model.get('webServiceURL').substring(0, 5) == 'http:') {
