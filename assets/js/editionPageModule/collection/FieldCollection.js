@@ -484,6 +484,12 @@ define([
                     break;
             }
 
+            subModel['labelFr'] = subModel['name'];
+            subModel['labelEn'] = subModel['name'];
+
+            console.log("***********");
+            console.log(subModel);
+
             return subModel;
         },
 
@@ -658,16 +664,19 @@ define([
                     var scrollArea = $(".dropArea .slimScrollDiv #scrollSection");
                     var lastItemofScrollArea = scrollArea.find('div.dropField:last');
 
-                    var scrollTo = lastItemofScrollArea.offset().top + lastItemofScrollArea.outerHeight(true) + scrollArea.scrollTop();
 
-                    console.log("scrollTo", scrollTo);
-                    console.log(lastItemofScrollArea.offset().top, "+", lastItemofScrollArea.outerHeight(true), "+", scrollArea.scrollTop());
+                    if (lastItemofScrollArea.offset())
+                    {
+                        var scrollTo = lastItemofScrollArea.offset().top + lastItemofScrollArea.outerHeight(true) + scrollArea.scrollTop();
 
-                    if (lastItemofScrollArea.offset()){
+                        console.log("scrollTo", scrollTo);
+                        console.log(lastItemofScrollArea.offset().top, "+", lastItemofScrollArea.outerHeight(true), "+", scrollArea.scrollTop());
+
                         scrollArea.animate({
                             scrollTop: scrollTo
                         }, 500);
                     }
+
                     this.fieldsexcludedfromdelete.push(field.get('id'));
 
                     this.formChannel.trigger('editModel', field.get('id'));
