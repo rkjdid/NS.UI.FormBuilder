@@ -209,7 +209,25 @@ define([
 
         // Adding contexts
         $.each(AppConfig.appMode, function(index, value){
-            if (index.indexOf("demo") == -1 && index != "topcontext" && index != "minimalist")
+
+            var fastobjLength = function(obj){
+                var i=0;
+                for (var x in obj){
+                    if(obj.hasOwnProperty(x)){
+                        i++;
+                    }
+                }
+                return i;
+            };
+
+            var context = $("#contextSwitcher .selectedContext").text().toLowerCase();
+
+            if (fastobjLength(AppConfig.appMode) == 2 && index.toLowerCase() == context)
+            {
+                window.context = context;
+                Backbone.Radio.channel('form').trigger('setFieldCollection', context);
+            }
+            else if (index.indexOf("demo") == -1 && index != "topcontext" && index != "minimalist")
             {
                 $("#contextSwitcher").append("<span class='hidden'>"+index+"</span>");
             }

@@ -124,7 +124,6 @@ define([
                 title       : translater.getValueFromKey('schema.label.fr'),
                 editorClass : 'form-control',
                 template    : fieldTemplate,
-                validators : ['required'],
                 editorAttrs : {
                     placeholder : translater.getValueFromKey('placeholder.label.fr')
                 }
@@ -134,7 +133,6 @@ define([
                 title       : translater.getValueFromKey('schema.label.en'),
                 editorClass : 'form-control',
                 template    : fieldTemplate,
-                validators : ['required'],
                 editorAttrs : {
                     placeholder : translater.getValueFromKey('placeholder.label.en')
                 }
