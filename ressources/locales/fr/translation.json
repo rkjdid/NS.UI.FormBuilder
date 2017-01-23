@@ -79,7 +79,7 @@
         },
 
         "description" : {
-            "fr" : "Description française du formulaire",
+            "fr" : "Description du formulaire",
             "en" : "Description anglaise du formulaire"
         },
         "keywords" : {

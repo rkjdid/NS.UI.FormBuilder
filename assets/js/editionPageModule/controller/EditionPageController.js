@@ -164,7 +164,6 @@ define([
                 preConfiguredFieldList : this.preConfiguredFieldList,
                 modelToEdit            : this.fieldCollection.get(modelID),
                 fieldsList             : this.fieldCollection.getFieldList(modelID)
-
             });
         },
 

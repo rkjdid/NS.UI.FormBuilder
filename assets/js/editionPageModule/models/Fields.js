@@ -120,7 +120,7 @@ define([
 
         schema : {
             labelFr   : {
-                type        : "Text",
+                type        : "Hidden",
                 title       : translater.getValueFromKey('schema.label.fr'),
                 editorClass : 'form-control',
                 template    : fieldTemplate,
@@ -130,7 +130,7 @@ define([
                 }
             },
             labelEn   : {
-                type        : "Text",
+                type        : "Hidden",
                 title       : translater.getValueFromKey('schema.label.en'),
                 editorClass : 'form-control',
                 template    : fieldTemplate,

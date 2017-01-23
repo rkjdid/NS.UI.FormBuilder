@@ -71,14 +71,11 @@ define([
                 }
             },
             labelFr   : {
-                type        : "Text",
+                type        : "Hidden",
                 title       : translater.getValueFromKey('form.label.fr'),
                 editorClass : 'form-control',
                 template    : fieldTemplate,
-                validators  : [{
-                    type : 'required',
-                    message : translater.getValueFromKey('form.validation')
-                },
+                validators  : [
                 function test(value) {
                     if (value.length > 50) {
                         return {
@@ -92,14 +89,11 @@ define([
                 }
             },
             labelEn   : {
-                type        : "Text",
+                type        : "Hidden",
                 title       : translater.getValueFromKey('form.label.en'),
                 editorClass : 'form-control',
                 template    : fieldTemplate,
-                validators  : [{
-                    type : 'required',
-                    message : translater.getValueFromKey('form.validation')
-                },
+                validators  : [
                 function test(value) {
                     if (value.length > 50) {
                         return {
@@ -117,10 +111,7 @@ define([
                 title       : translater.getValueFromKey('form.description.fr'),
                 editorClass : 'form-control',
                 template    : fieldTemplate,
-                validators  : [{
-                    type : 'required',
-                    message : translater.getValueFromKey('form.validation')
-                },
+                validators  : [
                 function test(value) {
                     if (value.length > 255) {
                         return {
@@ -134,14 +125,11 @@ define([
                 }
             },
             descriptionEn : {
-                type        : "TextArea",
+                type        : "Hidden",
                 title       : translater.getValueFromKey('form.description.en'),
                 editorClass : 'form-control',
                 template    : fieldTemplate,
-                validators  : [{
-                    type : 'required',
-                    message : translater.getValueFromKey('form.validation')
-                },
+                validators  : [
                 function test(value) {
                     if (value.length > 255) {
                         return {
@@ -171,7 +159,7 @@ define([
                 title       : translater.getValueFromKey('schema.obsolete')
             },
             propagate : {
-                type        : CheckboxEditor,
+                type        : "Hidden",
                 fieldClass  : "checkBoxEditor",
                 title       : translater.getValueFromKey('schema.propagate')
             },
@@ -206,14 +194,11 @@ define([
                     }
                 },
                 labelFr   : {
-                    type        : "Text",
+                    type        : "Hidden",
                     title       : translater.getValueFromKey('form.label.fr'),
                     editorClass : 'form-control',
                     template    : fieldTemplate,
-                    validators  : [{
-                        type : 'required',
-                        message : translater.getValueFromKey('form.validation')
-                    },
+                    validators  : [
                         function test(value) {
                             if (value.length > 55) {
                                 return {
@@ -227,14 +212,11 @@ define([
                     }
                 },
                 labelEn   : {
-                    type        : "Text",
+                    type        : "Hidden",
                     title       : translater.getValueFromKey('form.label.en'),
                     editorClass : 'form-control',
                     template    : fieldTemplate,
-                    validators  : [{
-                        type : 'required',
-                        message : translater.getValueFromKey('form.validation')
-                    },
+                    validators  : [
                         function test(value) {
                             if (value.length > 55) {
                                 return {
@@ -252,10 +234,7 @@ define([
                     title       : translater.getValueFromKey('form.description.fr'),
                     editorClass : 'form-control',
                     template    : fieldTemplate,
-                    validators  : [{
-                        type : 'required',
-                        message : translater.getValueFromKey('form.validation')
-                    },
+                    validators  : [
                         function test(value) {
                             if (value.length > 255) {
                                 return {
@@ -269,14 +248,11 @@ define([
                     }
                 },
                 descriptionEn : {
-                    type        : "TextArea",
+                    type        : "Hidden",
                     title       : translater.getValueFromKey('form.description.en'),
                     editorClass : 'form-control',
                     template    : fieldTemplate,
-                    validators  : [{
-                        type : 'required',
-                        message : translater.getValueFromKey('form.validation')
-                    },
+                    validators  : [
                         function test(value) {
                             if (value.length > 255) {
                                 return {
@@ -303,7 +279,7 @@ define([
                     title       : translater.getValueFromKey('schema.obsolete')
                 },
                 propagate : {
-                    type        : CheckboxEditor,
+                    type        : "Hidden",
                     fieldClass  : "checkBoxEditor",
                     title       : translater.getValueFromKey('schema.propagate')
                 },
@@ -350,14 +326,14 @@ define([
             this.id              = opt.id             || 0;
             this.name            = opt.name           || 'My form';
             this.descriptionFr   = opt.descriptionFr  || "";
-            this.descriptionEn   = opt.descriptionEn  || "";
+            this.descriptionEn   = "Default description";
             this.keywordsFr      = opt.keywordsFr     || ["formulaire"];
             this.keywordsEn      = opt.keywordsEn     || ["form"];
-            this.labelFr         = opt.labelFr        || "";
-            this.labelEn         = opt.labelEn        || "";
+            this.labelFr         = "Label par défaut";
+            this.labelEn         = "Default label";
             this.tag             = opt.tag            || "";
             this.obsolete        = opt.obsolete       || false;
-            this.propagate       = opt.propagate      || false;
+            this.propagate       = true;
             this.context         = opt.context        || "";
             this.isTemplate      = opt.isTemplate     || false;
             this.fileList        = opt.fileList       || [];
@@ -545,14 +521,14 @@ define([
                 //  form properties
                 name          : this.name,
                 descriptionFr : this.descriptionFr,
-                descriptionEn : this.descriptionEn,
+                descriptionEn : this.descriptionFr,
                 keywordsEn    : this.keywordsEn,
                 keywordsFr    : this.keywordsFr,
-                labelFr       : this.labelFr,
-                labelEn       : this.labelEn,
+                labelFr       : this.name,
+                labelEn       : this.name,
                 tag           : this.tag || "",
                 obsolete      : this.obsolete,
-                propagate     : this.propagate,
+                propagate     : true,
                 isTemplate    : this.isTemplate || false,
                 context       : this.context,
                 fileList      : this.fileList || [],
@@ -693,6 +669,8 @@ define([
                         }, 500);
                     }
                     this.fieldsexcludedfromdelete.push(field.get('id'));
+
+                    this.formChannel.trigger('editModel', field.get('id'));
                 }
 
                 this.nextFieldNew();

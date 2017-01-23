@@ -220,6 +220,12 @@ define([
         });
 
         $("#contextSwitcher span").click(function(){
+            console.log($("#contextSwitcher .selectedContext").text().toLowerCase());
+            if ($("#contextSwitcher .selectedContext").text().toLowerCase() == "ecoreleve")
+            {
+                window.location = "http://demo.ecoreleve.com";
+            }
+            /*
             if (window.location.hash.indexOf('#edition') == -1)
             {
                 if (!$(this).hasClass("selectedContext"))
@@ -262,6 +268,7 @@ define([
                     }
                 }
             }
+            */
         });
 
         if ($("#contextSwitcher span").length == 2)
