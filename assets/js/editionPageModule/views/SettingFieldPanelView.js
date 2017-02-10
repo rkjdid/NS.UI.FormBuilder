@@ -534,7 +534,7 @@ define([
 
                      this.setTreeViewConfiguration();
 
-                } else if (_.contains(['Select', 'CheckBox', 'Radio'], this.modelToEdit.constructor.type)) {
+                } else if (_.contains(['Select', 'Radio'], this.modelToEdit.constructor.type)) {
                      this.setMultipleFieldConfiguration();
                  }
 
