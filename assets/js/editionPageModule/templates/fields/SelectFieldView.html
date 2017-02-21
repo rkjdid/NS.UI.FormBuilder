@@ -22,7 +22,7 @@
             <select name="<% name %>" class="form-control" >
                 <% _.each(choices, function(el, idx) { %>
                     <option data-idx="<%=idx %>" value="<%= el.value %>" <% if (defaultValue.indexOf(el["id"]) >=0){ %> checked <% } %> >
-                            <%= el["en"] %>
+                            <%= el["fr"] %>
                     </option>
                 <% }) %>
             </select>
