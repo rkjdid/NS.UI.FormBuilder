@@ -35,13 +35,15 @@
     },
 
     "search" : {
+        "search"   : "\ue65f Rechercher",
         "name"     : "Nom",
         "keywords" : "Mots-clés",
         "user"     : "Utilisateur",
         "date" : {
             "from" : "De",
             "to"   : "&#192;"
-        }
+        },
+        "edited" : "Formulaires édités récemment"
     },
 
     "form" : {

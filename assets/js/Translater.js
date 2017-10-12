@@ -10,7 +10,7 @@ define([
         },
 
         initi18n : function() {
-            i18n.init({ resGetPath: this.url, getAsync : false, lng : navigator.language || navigator.userLanguagenavigator.language || navigator.userLanguage});
+            i18n.init({ resGetPath: this.url, getAsync : false, lng : "en"});
         },
 
         getValueFromKey : function(key) {

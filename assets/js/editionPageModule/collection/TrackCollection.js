@@ -302,8 +302,9 @@ define([
 
             if (datas)
             {
-                $.each(JSON.parse(datas), function(index, value)
+                $.each(datas, function(index, value)
                 {
+                    // TODO stuff here!
                     var values = [];
                     for(var ind in value)
                         values.push(ind);

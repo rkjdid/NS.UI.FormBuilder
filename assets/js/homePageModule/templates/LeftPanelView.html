@@ -1,10 +1,12 @@
-<div class="row">
-    <h1 class="row">
-        <span class="reneco reneco-search"></span>&nbsp;<span data-i18n="form.find">Rechercher un formulaire</span>
-    </h1>
-
+<div>
     <div class="row">
-        <form action="#search" class="col-md-8 col-md-offset-2 form">
+        <form action="#search" class="form">
+            <div class="search-box">
+                <input type="text" name="search" id="search" class="form-control reneco"
+                       data-i18n="[placeholder]search.search" placeholder="Rechercher" />
+                <span class="close">&#xe65e;</span>
+            </div>
+
             <h2>Description</h2>
 
             <div class="form-group" id="name-group">
@@ -61,27 +63,29 @@
 
         </form>
     </div>
+    <div class="row">
+        <h3 data-i18n="search.edited">Formulaires édités récemment</h3>
+    </div>
+    <!--<footer class="col-xs-6 col-md-12">-->
+        <!--<div class="row">-->
+            <!--<div class="col-md-10 col-md-offset-1">-->
+                <!--<button class="reneco pull-left grey" id="clearForm">-->
+                    <!--<label>-->
+                        <!--<span data-i18n="form.actions.clear">EFFACER</span>-->
+                    <!--</label>-->
+                    <!--<label class="empty"></label>-->
+                <!--</button>-->
 
-    <footer class="col-xs-6 col-md-12">
-        <div class="row">
-            <div class="col-md-10 col-md-offset-1">
-                <button class="reneco pull-left grey" id="clearForm">
-                    <label>
-                        <span data-i18n="form.actions.clear">EFFACER</span>
-                    </label>
-                    <label class="empty"></label>
-                </button>
-
-                <button class="reneco pull-right red" id="find">
-                    <label>
-                        <span data-i18n="form.actions.find">TROUVER</span>
-                    </label>
-                    <label>
-                        <span class="reneco reneco-search"></span>
-                    </label>
-                </button>
-            </div>
-        </div>
-    </footer>
+                <!--<button class="reneco pull-right red" id="find">-->
+                    <!--<label>-->
+                        <!--<span data-i18n="form.actions.find">TROUVER</span>-->
+                    <!--</label>-->
+                    <!--<label>-->
+                        <!--<span class="reneco reneco-search"></span>-->
+                    <!--</label>-->
+                <!--</button>-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</footer>-->
 
 </div>

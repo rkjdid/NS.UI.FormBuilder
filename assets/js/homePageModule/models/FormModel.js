@@ -18,7 +18,7 @@ define([
             labelEn          : '',
             creationDate     : new Date(),
             modificationDate : null,
-            curStatus        : 1,
+            status           : 'undefined',
             descriptionFr    : '',
             descriptionEn    : '',
             keywordsFr       : [],
@@ -54,6 +54,7 @@ define([
                 modificationDate = modificationDate.toString();
                 this.set('modificationDateDisplay', modificationDate.substring(0, modificationDate.length - 3));
             }
+            this.set('status', creationDate == modificationDate ? 'created': 'modified');
 
             if (this.defaults.context = "" && window.context)
                 this.defaults.context = window.context;
@@ -61,6 +62,10 @@ define([
             this.updateKeywords();
         },
 
+        /**
+         * updateKeywords replaces keywords with only the name property.
+         * might be worked around.
+         */
         updateKeywords : function() {
             var keywordsFr = [], keywordsEn = [];
 

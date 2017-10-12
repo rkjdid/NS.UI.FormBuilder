@@ -400,29 +400,29 @@ define([
          */
         displayFormInformation : function(elementAndModel) {
             var newSelctedRow = elementAndModel['model'].get('id');
+            var el      = elementAndModel['el'],
+                model   = elementAndModel['model'];
+
+            // remove rowControls from grid, to avoid duplicate cloning
+            $("#grid").find('#rowControls').remove();
 
             if (this.currentSelectedForm == newSelctedRow) {
                 this.clearSelectedRow();
-
             } else {
-
                 //  User clicked on another row
                 this.updateFooterAction();
 
-                var el      = elementAndModel['el'],
-                    model   = elementAndModel['model'];
+                // clone controls to selected row
+                $('#rowControls').clone().appendTo($(el).find("td:last-of-type"));
 
-                if (AppConfig.appMode.topcontext == "reneco")
-                {
+                if (AppConfig.appMode.topcontext == "reneco") {
                     $('tr.selected').removeClass('selected');
                     el.addClass('selected');
-                }
-                else
-                {
+                } else {
                     if ($('.formInformation').length > 0) {
                         $('.formInformation').fadeOut(100, _.bind(function() {
                             $('.padding').slideUp(500);
-                            $('.formInformation').remove()
+                            $('.formInformation').remove();
                             $('tr.selected').removeClass('selected');
                             this.addFormSection(el, model);
                         }, this));
@@ -434,14 +434,13 @@ define([
                 this.beforeFormSelection = this.currentSelectedForm;
                 this.currentSelectedForm = newSelctedRow;
             }
-
         },
 
         /**
          * Unselected current selected row
          */
         clearSelectedRow : function() {
-            //  User clicked on the same row
+            //  context !== reneco
             $('.formInformation').fadeOut(100, _.bind(function() {
                 $('.padding').slideUp(500);
                 $('.formInformation').remove()
@@ -494,16 +493,21 @@ define([
                  * Row click callback
                  * When user clicked on a row we send current element and model information with backbone radio grid channel
                  */
-                onClick: function () {
+                onClick: function (e) {
+                    // dismiss click event if srcElement is a .control (delete / edit)
+                    if ($(e.originalEvent.srcElement).hasClass("control")) {
+                        return;
+                    }
+
                     this.gridChannel = Backbone.Radio.channel('grid');
                     this.gridChannel.trigger('rowClicked', {
                         model   : this.model,
                         el      : this.$el
                     });
                 },
-                onDblClick: function() {
+                onDblClick: function(e) {
                     if (that.currentSelectedForm == -1)
-                        this.onClick();
+                        this.onClick(e);
                     that.editForm(this.model.get('context'));
                 }
             });
@@ -541,6 +545,12 @@ define([
                     label    : translater.getValueFromKey('grid.formContext') || 'Form Context',
                     cell     : 'string',
                     editable : false
+                }, {
+                    name     : 'controls',
+                    label    : '',
+                    cell     : 'string',
+                    editable : false,
+                    sortable : false
                 }],
 
                 collection : this.formCollection
@@ -762,10 +772,14 @@ define([
         /**
          * User wants to edit a form of the list
          */
-        editForm : function(context) {
-            window.context = context;
+        editForm : function(ctx) {
+            if (!ctx || typeof(ctx) !== 'string') {
+                // get currentSelectedForm's context
+                ctx = this.grid.collection.findWhere({id: this.currentSelectedForm}).get("context");
+            }
+            window.context = ctx;
 
-            Backbone.Radio.channel('form').trigger('setFieldCollection', window.context);
+            Backbone.Radio.channel('form').trigger('setFieldCollection', ctx);
 
             var formToEdit = this.formCollection.get(this.currentSelectedForm);
             //  Send an event to the formbuilder

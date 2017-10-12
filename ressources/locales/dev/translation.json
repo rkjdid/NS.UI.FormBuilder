@@ -36,13 +36,15 @@
   },
 
   "search" : {
+    "search"   : "\ue65f Search",
     "name"     : "Name",
     "keywords" : "Keywords",
     "user"     : "User",
     "date" : {
       "from" : "From",
       "to"   : "To"
-    }
+    },
+    "edited" : "Recently edited forms"
   },
 
   "form" : {
